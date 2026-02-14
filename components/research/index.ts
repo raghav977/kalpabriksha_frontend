@@ -1,0 +1,6 @@
+export { ResearchHero } from "./ResearchHero"
+export { ResearchPhilosophy } from "./ResearchPhilosophy"
+export { ResearchSupportProgram } from "./ResearchSupportProgram"
+export { ResearchFocusAreas } from "./ResearchFocusAreas"
+export { ResearchProposal } from "./ResearchProposal"
+export { ResearchConferenceSupport } from "./ResearchConferenceSupport"
