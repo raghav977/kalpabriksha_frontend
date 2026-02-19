@@ -1,9 +1,7 @@
-import { siteConfig } from "@/config/siteConfig"
 import { Button } from "@/components/ui/Button"
 import Link from "next/link"
 import founder from "@/public/founder.jpg"
 import Image from "next/image"
-import { CheckCircle } from "lucide-react"
 
 export function AboutPreviewSection() {
   const features = [

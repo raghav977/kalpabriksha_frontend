@@ -81,9 +81,11 @@ export interface ContactSubmission {
   phone?: string;
   subject: string;
   message: string;
-  type: 'partner' | 'consult' | 'general' | 'career';
+  type: 'partner' | 'consult' | 'general' | 'career' | 'team';
   status: 'new' | 'read' | 'replied' | 'archived';
   notes?: string;
+  teamMemberId?: number;
+  teamMemberName?: string;
   createdAt: string;
 }
 
@@ -91,8 +93,16 @@ export interface SiteConfig {
   id?: number;
   key: string;
   value: string;
-  group?: string;
-  isPublic?: boolean;
+  type: 'string' | 'json' | 'number' | 'boolean';
+  category: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Parsed config object returned by getAll
+export interface SiteConfigObject {
+  [key: string]: any;
 }
 
 // ============ SERVICES API ============
@@ -145,6 +155,7 @@ export const projectsApi = {
         active: params?.active ? 'true' : undefined
       } 
     });
+    console.log("THis is projects",data)
     return { projects: data.projects as Project[], pagination: data.pagination };
   },
 
@@ -282,28 +293,63 @@ export const teamApi = {
 
 // ============ SITE CONFIG API ============
 export const siteConfigApi = {
-  // Get all configs
-  getAll: async () => {
-    const { data } = await api.get('/config');
-    return data.configs as SiteConfig[];
-  },
-
-  // Get public configs
-  getPublic: async () => {
-    const { data } = await api.get('/config/public');
-    return data.configs as SiteConfig[];
+  // Get all configs (returns both parsed object and raw configs)
+  getAll: async (category?: string) => {
+    const { data } = await api.get('/config', { params: category ? { category } : undefined });
+    return { configs: data.configs as SiteConfigObject, raw: data.raw as SiteConfig[] };
   },
 
   // Get single config by key
   getByKey: async (key: string) => {
     const { data } = await api.get(`/config/${key}`);
+    return { config: data.config as SiteConfig, value: data.value };
+  },
+
+  // Get configs by category
+  getByCategory: async (category: string) => {
+    const { data } = await api.get('/config', { params: { category } });
+    return { configs: data.configs as SiteConfigObject, raw: data.raw as SiteConfig[] };
+  },
+
+  // Create or update config (admin)
+  upsert: async (configData: {
+    key: string;
+    value: any;
+    type?: 'string' | 'json' | 'number' | 'boolean';
+    category?: string;
+    description?: string;
+  }) => {
+    const { data } = await api.post('/config', configData);
+    return { config: data.config as SiteConfig, created: data.created as boolean };
+  },
+
+  // Update config by key (admin)
+  update: async (key: string, configData: {
+    value: any;
+    type?: 'string' | 'json' | 'number' | 'boolean';
+    category?: string;
+    description?: string;
+  }) => {
+    const { data } = await api.put(`/config/${key}`, configData);
     return data.config as SiteConfig;
   },
 
-  // Get configs by group
-  getByGroup: async (group: string) => {
-    const { data } = await api.get('/config', { params: { group } });
-    return data.configs as SiteConfig[];
+  // Delete config by key (admin)
+  delete: async (key: string) => {
+    const { data } = await api.delete(`/config/${key}`);
+    return data;
+  },
+
+  // Bulk update configs (admin)
+  bulkUpdate: async (configs: Array<{
+    key: string;
+    value: any;
+    type?: 'string' | 'json' | 'number' | 'boolean';
+    category?: string;
+    description?: string;
+  }>) => {
+    const { data } = await api.post('/config/bulk', { configs });
+    return { configs: data.configs as SiteConfig[], count: data.count as number };
   },
 };
 
@@ -312,6 +358,18 @@ export const configApi = siteConfigApi;
 
 // ============ CONTACT API ============
 export const contactApi = {
+  // Get all contact submissions (admin)
+  getAll: async (params?: { status?: string; type?: string; page?: number; limit?: number }) => {
+    const { data } = await api.get('/contact', { params });
+    return { submissions: data.submissions as ContactSubmission[], pagination: data.pagination };
+  },
+
+  // Get single submission by ID (admin)
+  getById: async (id: number) => {
+    const { data } = await api.get(`/contact/${id}`);
+    return data.submission as ContactSubmission;
+  },
+
   // Submit contact form (public)
   submit: async (formData: {
     name: string;
@@ -319,7 +377,8 @@ export const contactApi = {
     phone?: string;
     subject: string;
     message: string;
-    type?: 'partner' | 'consult' | 'general' | 'career';
+    type?: 'partner' | 'consult' | 'general' | 'career' | 'team';
+    teamMemberId?: number;
   }) => {
     const { data } = await api.post('/contact', formData);
     return data;
@@ -333,8 +392,28 @@ export const contactApi = {
     company?: string;
     subject: string;
     message: string;
+    type?: 'partner' | 'consult' | 'general' | 'career' | 'team';
+    teamMemberId?: number;
   }) => {
     const { data } = await api.post('/contact', formData);
+    return data;
+  },
+
+  // Contact specific team member (public)
+  contactTeamMember: async (teamMemberId: number, formData: {
+    name: string;
+    email: string;
+    phone?: string;
+    subject: string;
+    message: string;
+  }) => {
+    const { data } = await api.post(`/contact/team/${teamMemberId}`, formData);
+    return data;
+  },
+
+  // Update submission status (admin)
+  updateStatus: async (id: number, status: 'new' | 'read' | 'replied' | 'archived') => {
+    const { data } = await api.put(`/contact/${id}/status`, { status });
     return data;
   },
 
@@ -394,9 +473,14 @@ export const authApi = {
 export const uploadApi = {
   // Upload single file
   uploadFile: async (formData: FormData) => {
+    console.log("THis is formdata",formData)
     const { data } = await api.post('/upload/single', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      headers:{
+        'content-type': 'multipart/form-data'
+      }
+
     });
+    console.log("This is data",data);
     return data;
   },
 

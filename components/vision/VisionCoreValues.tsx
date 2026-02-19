@@ -1,6 +1,7 @@
 "use client"
 import { Award, Shield, Leaf, Lightbulb, Globe } from "lucide-react"
-import { siteConfig } from "@/config/siteConfig"
+import { usePublicSiteConfig } from "@/hooks/api/useSiteConfig"
+import { useMemo } from "react"
 
 const iconMap: Record<string, React.ElementType> = {
   Award,
@@ -10,7 +11,39 @@ const iconMap: Record<string, React.ElementType> = {
   Globe
 }
 
+// Fallback core values
+const fallbackCoreValues = [
+  { title: "Technical Excellence", icon: "Award" },
+  { title: "Integrity & Ethics", icon: "Shield" },
+  { title: "Sustainability", icon: "Leaf" },
+  { title: "Innovation", icon: "Lightbulb" },
+  { title: "Global Outlook", icon: "Globe" }
+];
+
 export function VisionCoreValues() {
+  const { data: configData = [] } = usePublicSiteConfig();
+  
+  const coreValues = useMemo(() => {
+    if (!configData || configData.length === 0) {
+      return fallbackCoreValues;
+    }
+    
+    const configMap: Record<string, string> = {};
+    configData.forEach((item) => {
+      configMap[item.key] = item.value;
+    });
+    
+    if (configMap['company_core_values']) {
+      try {
+        return JSON.parse(configMap['company_core_values']) as typeof fallbackCoreValues;
+      } catch {
+        return fallbackCoreValues;
+      }
+    }
+    
+    return fallbackCoreValues;
+  }, [configData]);
+
   return (
     <section className="py-20 bg-slate-900">
       <div className="max-w-7xl mx-auto px-6">
@@ -28,7 +61,7 @@ export function VisionCoreValues() {
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-6">
-          {siteConfig.coreValues.map((value, index) => {
+          {coreValues.map((value, index) => {
             const IconComponent = iconMap[value.icon] || Award
             return (
               <div 

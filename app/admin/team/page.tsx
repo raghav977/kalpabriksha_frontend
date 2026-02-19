@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
+
 import { useTeamMembers } from '@/hooks/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { teamApi, TeamMember } from '@/lib/api';
@@ -40,8 +40,8 @@ export default function TeamPage() {
       render: (member: TeamMember) => (
         <div className="w-10 h-10 rounded-full overflow-hidden bg-neutral-200">
           {member.image ? (
-            <Image
-              src={member.image}
+            <img
+              src={`http://localhost:8000${member.image}`}
               alt={member.name}
               width={40}
               height={40}

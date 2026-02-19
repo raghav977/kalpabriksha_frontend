@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
+
 import { useProjects } from '@/hooks/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectsApi, Project } from '@/lib/api';
@@ -34,10 +34,9 @@ export default function AdminProjectsPage() {
         <div className="flex items-center gap-3">
           {project.featuredImage ? (
             <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-neutral-100">
-              <Image
-                src={project.featuredImage}
+              <img
+                src={`http://localhost:8000${project.featuredImage}`}
                 alt={project.name}
-                fill
                 className="object-cover"
               />
             </div>

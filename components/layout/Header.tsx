@@ -5,13 +5,23 @@ import logo from "@/public/logo.jpg"
 import Image from "next/image";
 import { Button } from "../ui/Button";
 import { Menu, X } from "lucide-react";
-import { siteConfig } from "@/config/siteConfig";
+
+// Static navigation links
+const navLinks = [
+    { name: "Home", href: "/" },
+    { name: "About", href: "/about" },
+    { name: "Services", href: "/services" },
+    { name: "Projects", href: "/projects" },
+    { name: "Research", href: "/research" },
+    {name:"Blog",href:"/blog"},
+    { name: "Careers", href: "/careers" },
+    { name: "Connect", href: "/contact" },
+    { name: "Global Vision", href: "/vision" }
+];
 
 export const Header: React.FC = () => {
 
     const [isOpen, setIsOpen] = useState(false)
-
-    const navLinks = siteConfig.navLinks
 
     const toggleMenu = () => setIsOpen(!isOpen)
 

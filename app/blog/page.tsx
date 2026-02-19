@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import Image from 'next/image';
+
 import { useBlogs, usePrefetchBlog } from '@/hooks/api';
 import { Layout } from '@/components/layout/Layout';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
@@ -115,10 +115,9 @@ export default function BlogPage() {
                     {/* Image */}
                     <div className="relative h-48 overflow-hidden">
                       {blog.featuredImage ? (
-                        <Image
-                          src={blog.featuredImage}
+                        <img
+                          src={`http://localhost:8000${blog.featuredImage}`}
                           alt={blog.title}
-                          fill
                           className="object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       ) : (

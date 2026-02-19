@@ -1,7 +1,4 @@
-import { siteConfig } from "@/config/siteConfig"
-import { Button } from "@/components/ui/Button"
-import Link from "next/link"
-import { ArrowRight, Sparkles } from "lucide-react"
+import { Sparkles } from "lucide-react"
 
 export function MessageFounder() {
   return (

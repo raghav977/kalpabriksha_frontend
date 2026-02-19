@@ -1,6 +1,7 @@
 "use client"
 import { Mountain, Map, Droplets, Zap, Building, Route, HardHat, Leaf } from "lucide-react"
-import { siteConfig } from "@/config/siteConfig"
+import { usePublicSiteConfig } from "@/hooks/api/useSiteConfig"
+import { useMemo } from "react"
 
 const iconMap: Record<string, React.ElementType> = {
   Mountain,
@@ -13,7 +14,42 @@ const iconMap: Record<string, React.ElementType> = {
   Leaf
 }
 
+// Fallback additional services
+const fallbackServices = [
+  { title: "Geological Mapping & Surveys", icon: "Mountain" },
+  { title: "GIS & Remote Sensing", icon: "Map" },
+  { title: "Hydrology & Water Resources", icon: "Droplets" },
+  { title: "Transmission Line Design", icon: "Zap" },
+  { title: "Structural Engineering", icon: "Building" },
+  { title: "Road & Access Design", icon: "Route" },
+  { title: "Construction Supervision", icon: "HardHat" },
+  { title: "Environmental Assessment", icon: "Leaf" }
+];
+
 export function AdditionalServicesSection() {
+  const { data: configData = [] } = usePublicSiteConfig();
+  
+  const additionalServices = useMemo(() => {
+    if (!configData || configData.length === 0) {
+      return fallbackServices;
+    }
+    
+    const configMap: Record<string, string> = {};
+    configData.forEach((item) => {
+      configMap[item.key] = item.value;
+    });
+    
+    if (configMap['additional_services']) {
+      try {
+        return JSON.parse(configMap['additional_services']) as typeof fallbackServices;
+      } catch {
+        return fallbackServices;
+      }
+    }
+    
+    return fallbackServices;
+  }, [configData]);
+
   return (
     <section className="py-20 bg-slate-900">
       <div className="max-w-7xl mx-auto px-6">
@@ -33,7 +69,7 @@ export function AdditionalServicesSection() {
 
         {/* Services Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {siteConfig.additionalServices.map((service, index) => {
+          {additionalServices.map((service, index) => {
             const IconComponent = iconMap[service.icon] || Mountain
             return (
               <div 

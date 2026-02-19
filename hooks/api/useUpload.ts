@@ -10,6 +10,7 @@ export function useUploadFile() {
   return useMutation({
     mutationFn: (file: File) => {
       const formData = new FormData();
+      console.log("this is file",file)
       formData.append('image', file);
       return uploadApi.uploadFile(formData);
     },

@@ -22,21 +22,21 @@ export const siteConfig = {
     {
       name: "Manoj Bhattarai",
       position: "Founder managing director",
-      email: "nexus@consultkes.com",
+      email: "m.bhattarai@connectkes.com",
       linkedin: "#",
       image: "/founder.jpg"
     },
     {
       name: "Nabin Gautam",
       position: "Senior Hydropower Engineer",
-      email: "engineering@consultkes.com",
+      email: "n.gautam@connectkes.com",
       linkedin: "#",
       image: "/nabingautamsenior.jpeg"
     },
     {
       name: "Nirajan Ojha",
       position: "Senior Hydrogeologist and Research Coordinator",
-      email: "nexus@consultkes.com",
+      email: "n.ojha@connectkes.com",
       linkedin: "#",
       image: "/nirajanojha.jpeg"
     }

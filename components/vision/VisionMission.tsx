@@ -1,8 +1,47 @@
 "use client"
 import { Target, Eye, Flag } from "lucide-react"
-import { siteConfig } from "@/config/siteConfig"
+import { usePublicSiteConfig } from "@/hooks/api/useSiteConfig"
+import { useMemo } from "react"
+
+// Fallback content
+const fallbackVision = "To become a leading engineering consultancy firm in South Asia known for technical excellence, sustainability, and research-driven innovation in the fields of hydropower, renewable energy, and infrastructure development.";
+
+const fallbackMission = [
+  "To deliver technically rigorous, innovative, and sustainable engineering solutions",
+  "To contribute to Nepal's infrastructure and energy development with integrity",
+  "To support capacity building and nurture engineering talent",
+  "To integrate cutting-edge technology and research into every project",
+  "To establish ourselves as a globally competitive consultancy"
+];
 
 export function VisionMission() {
+  const { data: configData = [] } = usePublicSiteConfig();
+  
+  const { vision, mission } = useMemo(() => {
+    if (!configData || configData.length === 0) {
+      return { vision: fallbackVision, mission: fallbackMission };
+    }
+    
+    const configMap: Record<string, string> = {};
+    configData.forEach((item) => {
+      configMap[item.key] = item.value;
+    });
+    
+    let parsedMission = fallbackMission;
+    if (configMap['company_mission']) {
+      try {
+        parsedMission = JSON.parse(configMap['company_mission']);
+      } catch {
+        parsedMission = fallbackMission;
+      }
+    }
+    
+    return {
+      vision: configMap['company_vision'] || fallbackVision,
+      mission: parsedMission
+    };
+  }, [configData]);
+
   return (
     <section className="py-20 bg-slate-50">
       <div className="max-w-7xl mx-auto px-6">
@@ -14,7 +53,7 @@ export function VisionMission() {
             </div>
             <h2 className="text-3xl font-bold text-slate-900 mb-6">Our Vision</h2>
             <p className="text-slate-600 text-lg leading-relaxed">
-              {siteConfig.vision}
+              {vision}
             </p>
           </div>
 
@@ -25,7 +64,7 @@ export function VisionMission() {
             </div>
             <h2 className="text-3xl font-bold text-white mb-6">Our Mission</h2>
             <ul className="space-y-4">
-              {siteConfig.mission.map((item, index) => (
+              {mission.map((item, index) => (
                 <li key={index} className="flex items-start gap-3">
                   <Flag className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-1" />
                   <span className="text-slate-300">{item}</span>

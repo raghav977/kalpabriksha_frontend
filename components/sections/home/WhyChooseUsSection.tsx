@@ -1,6 +1,8 @@
-import { siteConfig } from "@/config/siteConfig"
-import { Target, CheckCircle, Globe, Microscope, ArrowRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import Link from "next/link"
+
+// Static company short name
+const COMPANY_SHORT_NAME = "KES";
 
 export function WhyChooseUsSection() {
   return (
@@ -13,7 +15,7 @@ export function WhyChooseUsSection() {
           </span>
           <div className="grid lg:grid-cols-2 gap-8 items-start">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-tight">
-              {siteConfig.shortName} Is The Leader In Engineering Consultancy
+              {COMPANY_SHORT_NAME} Is The Leader In Engineering Consultancy
             </h2>
             <p className="text-slate-600 text-lg leading-relaxed">
               With Nepal as our headquarters, we combine local expertise with international best practices 

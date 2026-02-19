@@ -4,7 +4,7 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useBlog } from '@/hooks/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { blogsApi } from '@/lib/api';
+import { Blog, blogsApi } from '@/lib/api';
 import {
   PageHeader,
   FormCard,
@@ -19,14 +19,21 @@ import {
   ImageUpload,
 } from '@/components/admin';
 
+// Form type without readonly fields
+type BlogFormData = Omit<
+  Blog,
+  'id' | 'createdAt' | 'updatedAt' | 'viewCount'
+>;
+
 export default function EditBlogPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const queryClient = useQueryClient();
-  
+
   const { data: blog, isLoading, error } = useBlog(parseInt(id));
-  
-  const [formData, setFormData] = useState({
+
+  // Form state fully typed
+  const [formData, setFormData] = useState<BlogFormData>({
     title: '',
     slug: '',
     excerpt: '',
@@ -34,30 +41,40 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
     category: 'news',
     author: '',
     featuredImage: '',
+    images: [],
     tags: [''],
     isFeatured: false,
-    publishedAt: undefined as string | undefined,
+    publishedAt: undefined,
+    status: 'draft',
+    metaTitle: '',
+    metaDescription: '',
   });
 
+  // Load blog data into form
   useEffect(() => {
     if (blog) {
       setFormData({
-        title: blog.title || '',
-        slug: blog.slug || '',
-        excerpt: blog.excerpt || '',
-        content: blog.content || '',
-        category: blog.category || 'news',
-        author: blog.author || '',
-        featuredImage: blog.featuredImage || '',
+        title: blog.title,
+        slug: blog.slug,
+        excerpt: blog.excerpt,
+        content: blog.content,
+        category: blog.category,
+        author: blog.author,
+        featuredImage: blog.featuredImage ?? '',
+        images: blog.images ?? [],
         tags: blog.tags?.length ? blog.tags : [''],
-        isFeatured: blog.isFeatured || false,
-        publishedAt: blog.publishedAt || undefined,
+        isFeatured: blog.isFeatured,
+        publishedAt: blog.publishedAt,
+        status: blog.status,
+        metaTitle: blog.metaTitle ?? '',
+        metaDescription: blog.metaDescription ?? '',
       });
     }
   }, [blog]);
 
+  // Mutation to update blog
   const updateMutation = useMutation({
-    mutationFn: (data: typeof formData) => blogsApi.update(parseInt(id), data),
+    mutationFn: (data: Partial<Blog>) => blogsApi.update(parseInt(id), data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['blogs'] });
       queryClient.invalidateQueries({ queryKey: ['blogs', id] });
@@ -65,18 +82,20 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
     },
   });
 
+  // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const tags = formData.tags.filter(t => t.trim() !== '');
+    const tags = formData.tags.filter((t) => t.trim() !== '');
     updateMutation.mutate({ ...formData, tags });
   };
 
+  // Generate slug from title
   const generateSlug = () => {
     const slug = formData.title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
-    setFormData(prev => ({ ...prev, slug }));
+    setFormData((prev) => ({ ...prev, slug }));
   };
 
   const categoryOptions = [
@@ -99,7 +118,10 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
     return (
       <div>
         <PageHeader title="Edit Blog Post" backButton />
-        <ErrorState message="Failed to load blog post" onRetry={() => router.push('/admin/blogs')} />
+        <ErrorState
+          message="Failed to load blog post"
+          onRetry={() => router.push('/admin/blogs')}
+        />
       </div>
     );
   }
@@ -108,12 +130,20 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
     <div>
       <PageHeader title="Edit Blog Post" backButton />
 
-      <FormCard error={updateMutation.isError ? 'Failed to update blog post. Please try again.' : undefined}>
+      <FormCard
+        error={
+          updateMutation.isError
+            ? 'Failed to update blog post. Please try again.'
+            : undefined
+        }
+      >
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
             label="Title"
             value={formData.title}
-            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, title: e.target.value }))
+            }
             required
           />
 
@@ -122,7 +152,9 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
               <Input
                 label="URL Slug"
                 value={formData.slug}
-                onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, slug: e.target.value }))
+                }
                 placeholder="auto-generated-from-title"
                 required
               />
@@ -139,14 +171,18 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
           <Input
             label="Author"
             value={formData.author}
-            onChange={(e) => setFormData(prev => ({ ...prev, author: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, author: e.target.value }))
+            }
             required
           />
 
           <Textarea
             label="Excerpt"
             value={formData.excerpt}
-            onChange={(e) => setFormData(prev => ({ ...prev, excerpt: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, excerpt: e.target.value }))
+            }
             rows={2}
             placeholder="Brief summary for previews..."
             required
@@ -155,7 +191,9 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
           <Textarea
             label="Content"
             value={formData.content}
-            onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, content: e.target.value }))
+            }
             rows={10}
             placeholder="Full blog post content (supports Markdown)..."
             required
@@ -165,7 +203,9 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
             <Select
               label="Category"
               value={formData.category}
-              onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, category: e.target.value }))
+              }
               options={categoryOptions}
             />
             <div />
@@ -174,19 +214,30 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
           <ImageUpload
             label="Featured Image"
             value={formData.featuredImage}
-            onChange={(url) => setFormData(prev => ({ ...prev, featuredImage: url }))}
+            onChange={(url) =>
+              setFormData((prev) => ({ ...prev, featuredImage: url }))
+            }
             aspectRatio="video"
           />
 
           <ListInput
             label="Tags"
             items={formData.tags}
-            onAdd={() => setFormData(prev => ({ ...prev, tags: [...prev.tags, ''] }))}
-            onRemove={(index) => setFormData(prev => ({ ...prev, tags: prev.tags.filter((_, i) => i !== index) }))}
-            onChange={(index, value) => setFormData(prev => ({
-              ...prev,
-              tags: prev.tags.map((t, i) => (i === index ? value : t)),
-            }))}
+            onAdd={() =>
+              setFormData((prev) => ({ ...prev, tags: [...prev.tags, ''] }))
+            }
+            onRemove={(index) =>
+              setFormData((prev) => ({
+                ...prev,
+                tags: prev.tags.filter((_, i) => i !== index),
+              }))
+            }
+            onChange={(index, value) =>
+              setFormData((prev) => ({
+                ...prev,
+                tags: prev.tags.map((t, i) => (i === index ? value : t)),
+              }))
+            }
             placeholder="Tag"
             addLabel="+ Add Tag"
           />
@@ -196,16 +247,26 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
               id="isFeatured"
               label="Featured Post"
               checked={formData.isFeatured}
-              onChange={(e) => setFormData(prev => ({ ...prev, isFeatured: e.target.checked }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  isFeatured: e.target.checked,
+                }))
+              }
             />
             <Checkbox
               id="publish"
               label="Published"
-              checked={!!formData.publishedAt}
-              onChange={(e) => setFormData(prev => ({ 
-                ...prev, 
-                publishedAt: e.target.checked ? new Date().toISOString() : undefined 
-              }))}
+              checked={formData.status === 'published'}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  status: e.target.checked ? 'published' : 'draft',
+                  publishedAt: e.target.checked
+                    ? prev.publishedAt ?? new Date().toISOString()
+                    : undefined,
+                }))
+              }
             />
           </div>
 

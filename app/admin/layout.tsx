@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
+
 import { useAuth } from '@/hooks/api';
 
 // Sidebar navigation items
@@ -13,6 +13,8 @@ const navItems = [
   { href: '/admin/projects', label: 'Projects', icon: '◉' },
   { href: '/admin/blogs', label: 'Blog Posts', icon: '◇' },
   { href: '/admin/team', label: 'Team', icon: '◆' },
+  { href: '/admin/messages', label: 'Messages', icon: '✉' },
+  { href: '/admin/settings', label: 'Settings', icon: '⚙' },
 ];
 
 export default function AdminLayout({

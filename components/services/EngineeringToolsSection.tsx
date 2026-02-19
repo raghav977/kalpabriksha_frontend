@@ -1,10 +1,50 @@
 "use client"
-import { siteConfig } from "@/config/siteConfig"
 import { Wrench } from "lucide-react"
+import { usePublicSiteConfig } from "@/hooks/api/useSiteConfig"
+import { useMemo } from "react"
+
+// Fallback engineering tools
+const fallbackTools = [
+  { name: "AutoCAD Civil 3D", category: "Design & Drafting" },
+  { name: "HEC-RAS", category: "Hydraulic Modeling" },
+  { name: "GeoStudio", category: "Geotechnical Analysis" },
+  { name: "PVsyst", category: "Solar Design" },
+  { name: "ETAP", category: "Electrical Analysis" },
+  { name: "ArcGIS Pro", category: "GIS & Mapping" },
+  { name: "ANSYS Fluent", category: "CFD Simulation" },
+  { name: "SAP2000", category: "Structural Analysis" },
+  { name: "QGIS", category: "GIS & Mapping" },
+  { name: "MATLAB", category: "Technical Computing" },
+  { name: "Microsoft Project", category: "Project Management" },
+  { name: "Primavera P6", category: "Project Management" }
+];
 
 export function EngineeringToolsSection() {
+  const { data: configData = [] } = usePublicSiteConfig();
+  
+  const engineeringTools = useMemo(() => {
+    if (!configData || configData.length === 0) {
+      return fallbackTools;
+    }
+    
+    const configMap: Record<string, string> = {};
+    configData.forEach((item) => {
+      configMap[item.key] = item.value;
+    });
+    
+    if (configMap['engineering_tools']) {
+      try {
+        return JSON.parse(configMap['engineering_tools']) as typeof fallbackTools;
+      } catch {
+        return fallbackTools;
+      }
+    }
+    
+    return fallbackTools;
+  }, [configData]);
+
   // Group tools by category
-  const categories = siteConfig.engineeringTools.reduce((acc, tool) => {
+  const categories = engineeringTools.reduce((acc, tool) => {
     if (!acc[tool.category]) {
       acc[tool.category] = []
     }
@@ -31,7 +71,7 @@ export function EngineeringToolsSection() {
 
         {/* Tools Grid */}
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {siteConfig.engineeringTools.map((tool, index) => (
+          {engineeringTools.map((tool, index) => (
             <div 
               key={index}
               className="bg-white border border-slate-200 rounded-xl p-5 hover:border-yellow-400 hover:shadow-lg transition-all duration-300 group"

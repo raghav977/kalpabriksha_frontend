@@ -1,38 +1,37 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { siteConfigApi, SiteConfig } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { siteConfigApi, SiteConfig, SiteConfigObject } from '@/lib/api';
 
 // Query Keys
 export const siteConfigKeys = {
   all: ['siteConfig'] as const,
   lists: () => [...siteConfigKeys.all, 'list'] as const,
+  category: (category: string) => [...siteConfigKeys.all, 'category', category] as const,
   key: (key: string) => [...siteConfigKeys.all, 'key', key] as const,
-  group: (group: string) => [...siteConfigKeys.all, 'group', group] as const,
-  public: () => [...siteConfigKeys.all, 'public'] as const,
 };
 
 /**
- * Hook to fetch all site configurations (admin)
+ * Hook to fetch all site configurations
  */
-export function useSiteConfigs() {
+export function useSiteConfigs(category?: string) {
   return useQuery({
-    queryKey: siteConfigKeys.lists(),
-    queryFn: () => siteConfigApi.getAll(),
+    queryKey: category ? siteConfigKeys.category(category) : siteConfigKeys.lists(),
+    queryFn: () => siteConfigApi.getAll(category),
     staleTime: 10 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
   });
 }
 
 /**
- * Hook to fetch public site configuration
+ * Hook to fetch configs by category
  */
-export function usePublicSiteConfig() {
+export function useSiteConfigByCategory(category: string) {
   return useQuery({
-    queryKey: siteConfigKeys.public(),
-    queryFn: () => siteConfigApi.getPublic(),
+    queryKey: siteConfigKeys.category(category),
+    queryFn: () => siteConfigApi.getByCategory(category),
+    enabled: !!category,
     staleTime: 10 * 60 * 1000,
-    gcTime: 60 * 60 * 1000,
   });
 }
 
@@ -49,18 +48,80 @@ export function useSiteConfigByKey(key: string) {
 }
 
 /**
- * Hook to fetch configs by group
+ * Hook to create or update a config
  */
-export function useSiteConfigByGroup(group: string) {
-  return useQuery({
-    queryKey: siteConfigKeys.group(group),
-    queryFn: () => siteConfigApi.getByGroup(group),
-    enabled: !!group,
-    staleTime: 10 * 60 * 1000,
+export function useUpsertSiteConfig() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: {
+      key: string;
+      value: any;
+      type?: 'string' | 'json' | 'number' | 'boolean';
+      category?: string;
+      description?: string;
+    }) => siteConfigApi.upsert(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: siteConfigKeys.all });
+    },
   });
 }
 
-// Type for parsed site config
+/**
+ * Hook to update a config by key
+ */
+export function useUpdateSiteConfig() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ key, ...data }: {
+      key: string;
+      value: any;
+      type?: 'string' | 'json' | 'number' | 'boolean';
+      category?: string;
+      description?: string;
+    }) => siteConfigApi.update(key, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: siteConfigKeys.all });
+    },
+  });
+}
+
+/**
+ * Hook to delete a config
+ */
+export function useDeleteSiteConfig() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (key: string) => siteConfigApi.delete(key),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: siteConfigKeys.all });
+    },
+  });
+}
+
+/**
+ * Hook to bulk update configs
+ */
+export function useBulkUpdateSiteConfigs() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (configs: Array<{
+      key: string;
+      value: any;
+      type?: 'string' | 'json' | 'number' | 'boolean';
+      category?: string;
+      description?: string;
+    }>) => siteConfigApi.bulkUpdate(configs),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: siteConfigKeys.all });
+    },
+  });
+}
+
+// Parsed config type
 export interface ParsedSiteConfig {
   siteName: string;
   siteDescription: string;
@@ -83,90 +144,71 @@ export interface ParsedSiteConfig {
     experience: number;
     team: number;
   };
+  founderName?: string;
+  founderTitle?: string;
+  founderMessage?: string;
+  founderImage?: string;
+  mission?: string;
+  vision?: string;
+  coreValues?: string[];
 }
 
 /**
  * Hook to fetch and parse site config into a structured format
  */
 export function useParsedSiteConfig() {
-  const { data: configs, ...rest } = usePublicSiteConfig();
+  const { data, ...rest } = useSiteConfigs();
   
-  // Convert array of configs to structured object
-  const parsedConfig: ParsedSiteConfig | undefined = configs ? configs.reduce((acc, config) => {
-    switch (config.key) {
-      case 'site_name':
-        acc.siteName = config.value;
-        break;
-      case 'site_description':
-        acc.siteDescription = config.value;
-        break;
-      case 'logo':
-        acc.logo = config.value;
-        break;
-      case 'email':
-        acc.email = config.value;
-        break;
-      case 'phone':
-        acc.phone = config.value;
-        break;
-      case 'address':
-        acc.address = config.value;
-        break;
-      case 'social_facebook':
-        acc.socialLinks.facebook = config.value;
-        break;
-      case 'social_twitter':
-        acc.socialLinks.twitter = config.value;
-        break;
-      case 'social_linkedin':
-        acc.socialLinks.linkedin = config.value;
-        break;
-      case 'social_instagram':
-        acc.socialLinks.instagram = config.value;
-        break;
-      case 'hero_title':
-        acc.heroTitle = config.value;
-        break;
-      case 'hero_subtitle':
-        acc.heroSubtitle = config.value;
-        break;
-      case 'hero_images':
-        try {
-          acc.heroImages = JSON.parse(config.value);
-        } catch {
-          acc.heroImages = [];
-        }
-        break;
-      case 'stats_projects':
-        acc.stats.projects = parseInt(config.value) || 0;
-        break;
-      case 'stats_clients':
-        acc.stats.clients = parseInt(config.value) || 0;
-        break;
-      case 'stats_experience':
-        acc.stats.experience = parseInt(config.value) || 0;
-        break;
-      case 'stats_team':
-        acc.stats.team = parseInt(config.value) || 0;
-        break;
-    }
-    return acc;
-  }, {
-    siteName: '',
-    siteDescription: '',
-    logo: '',
-    email: '',
-    phone: '',
-    address: '',
-    socialLinks: {},
-    heroTitle: '',
-    heroSubtitle: '',
-    heroImages: [],
-    stats: { projects: 0, clients: 0, experience: 0, team: 0 },
-  } as ParsedSiteConfig) : undefined;
+  const parsedConfig: ParsedSiteConfig | undefined = data?.configs ? {
+    siteName: data.configs.site_name || data.configs.siteName || '',
+    siteDescription: data.configs.site_description || data.configs.siteDescription || '',
+    logo: data.configs.logo || '',
+    email: data.configs.email || data.configs.contact_email || '',
+    phone: data.configs.phone || data.configs.contact_phone || '',
+    address: data.configs.address || data.configs.contact_address || '',
+    socialLinks: {
+      facebook: data.configs.social_facebook || '',
+      twitter: data.configs.social_twitter || '',
+      linkedin: data.configs.social_linkedin || '',
+      instagram: data.configs.social_instagram || '',
+    },
+    heroTitle: data.configs.hero_title || '',
+    heroSubtitle: data.configs.hero_subtitle || '',
+    heroImages: Array.isArray(data.configs.hero_images) ? data.configs.hero_images : [],
+    stats: {
+      projects: Number(data.configs.stats_projects) || 0,
+      clients: Number(data.configs.stats_clients) || 0,
+      experience: Number(data.configs.stats_experience) || 0,
+      team: Number(data.configs.stats_team) || 0,
+    },
+    founderName: data.configs.founder_name || '',
+    founderTitle: data.configs.founder_title || '',
+    founderMessage: data.configs.founder_message || '',
+    founderImage: data.configs.founder_image || '',
+    mission: data.configs.mission || '',
+    vision: data.configs.vision || '',
+    coreValues: Array.isArray(data.configs.core_values) ? data.configs.core_values : [],
+  } : undefined;
   
   return {
     data: parsedConfig,
+    raw: data?.raw,
+    configs: data?.configs,
     ...rest,
+  };
+}
+
+/**
+ * Alias for useParsedSiteConfig - used by public components
+ * Returns raw config array for backward compatibility
+ */
+export function usePublicSiteConfig() {
+  const { data, isLoading, error } = useSiteConfigs();
+  
+  return {
+    data: data?.raw || [],
+    isLoading,
+    error,
+    configs: data?.configs,
   };
 }

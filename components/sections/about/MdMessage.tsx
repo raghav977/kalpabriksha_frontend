@@ -1,8 +1,40 @@
-import { siteConfig } from "@/config/siteConfig";
-
+"use client"
+import { usePublicSiteConfig } from "@/hooks/api/useSiteConfig";
+import { useMemo } from "react";
 import founder from "@/public/founder.jpg"
 import Image from "next/image";
+
+// Fallback founder info
+const fallbackFounder = {
+  name: "Manoj Bhattarai",
+  title: "Founder & Managing Director",
+  message: `At Kalpabrikshya Engineering Solutions, our journey began with a clear purpose: to contribute meaningfully to Nepal's infrastructure and energy development while building a consultancy capable of competing at the international level.
+
+Nepal holds immense potential in hydropower and renewable energy. Our responsibility as engineers is not only to harness this potential but to do so with technical excellence, environmental responsibility, and long-term vision.
+
+Our commitment is to deliver world-class consultancy services that balance technical rigor with environmental sustainability. As we grow, we remain dedicated to nurturing engineering talent, fostering innovation, and contributing to Nepal's broader development goals.`
+};
+
 export default function MdMessage(){
+    const { data: configData = [] } = usePublicSiteConfig();
+    
+    const founderInfo = useMemo(() => {
+      if (!configData || configData.length === 0) {
+        return fallbackFounder;
+      }
+      
+      const configMap: Record<string, string> = {};
+      configData.forEach((item) => {
+        configMap[item.key] = item.value;
+      });
+      
+      return {
+        name: configMap['founder_name'] || fallbackFounder.name,
+        title: configMap['founder_title'] || fallbackFounder.title,
+        message: configMap['founder_message'] || fallbackFounder.message
+      };
+    }, [configData]);
+
     return(
         <section className="relative py-16 lg:py-24 bg-slate-50 overflow-hidden">
         {/* Top Wave */}
@@ -33,7 +65,7 @@ export default function MdMessage(){
     <div className="w-32 h-32 relative rounded-2xl overflow-hidden shrink-0 bg-slate-200">
       <Image
         src={founder}
-        alt="Manoj Bhattarai"
+        alt={founderInfo.name}
         fill
         className="object-cover"
         sizes="128px"
@@ -43,14 +75,14 @@ export default function MdMessage(){
 
     <div>
       <h3 className="text-xl font-bold text-foreground mb-1">
-        {siteConfig.founder.name}
+        {founderInfo.name}
       </h3>
       <p className="text-primary font-medium mb-6">
-        {siteConfig.founder.title}
+        {founderInfo.title}
       </p>
 
       <div className="text-muted-foreground space-y-4 leading-relaxed">
-        {siteConfig.founder.message.split("\n\n").map((para, i) => (
+        {founderInfo.message.split("\n\n").map((para, i) => (
           <p key={i}>{para}</p>
         ))}
       </div>

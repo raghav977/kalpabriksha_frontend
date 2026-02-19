@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
+
 import { useBlogs } from '@/hooks/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { blogsApi, Blog } from '@/lib/api';
@@ -24,6 +24,7 @@ export default function AdminBlogsPage() {
   });
 
   const blogs = data?.blogs || [];
+  console.log("this is blogs",blogs);
 
   const columns = [
     {
@@ -33,10 +34,10 @@ export default function AdminBlogsPage() {
         <div className="flex items-center gap-3">
           {blog.featuredImage ? (
             <div className="relative w-14 h-10 rounded-lg overflow-hidden shrink-0 bg-neutral-100">
-              <Image
-                src={blog.featuredImage}
+              <img
+                src={`http://localhost:8000${blog.featuredImage}`}
                 alt={blog.title}
-                fill
+
                 className="object-cover"
               />
             </div>
@@ -71,7 +72,7 @@ export default function AdminBlogsPage() {
       header: 'Status',
       render: (blog: Blog) => (
         <StatusBadge 
-          status={blog.publishedAt ? 'Published' : 'Draft'} 
+          status={blog.status=='published' ? 'Published' : 'Draft'} 
           variant={blog.publishedAt ? 'success' : 'warning'} 
         />
       ),
@@ -81,9 +82,9 @@ export default function AdminBlogsPage() {
       header: 'Featured',
       render: (blog: Blog) => (
         blog.isFeatured ? (
-          <span className="w-5 h-5 bg-neutral-900 rounded-full flex items-center justify-center text-white text-xs">✓</span>
+          <span className="w-5 h-5 bg-neutral-900 rounded-full flex items-center justify-center text-white text-xs">Yes</span>
         ) : (
-          <span className="w-5 h-5 border border-neutral-200 rounded-full" />
+          <span className="w-5 h-5 border border-neutral-200 rounded-full">No</span>
         )
       ),
     },

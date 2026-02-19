@@ -1,7 +1,6 @@
 "use client"
 import Link from "next/link"
-import { ArrowRight, Phone } from "lucide-react"
-import { siteConfig } from "@/config/siteConfig"
+import { ArrowRight } from "lucide-react"
 
 export function ServicesCTA() {
   return (

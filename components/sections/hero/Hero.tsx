@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { siteConfig } from "@/config/siteConfig"
 import image1 from "@/public/construction.jpg"
 import image2 from "@/public/founder.jpg"
 import { Phone, ArrowRight, Globe, Lightbulb, Users } from "lucide-react"

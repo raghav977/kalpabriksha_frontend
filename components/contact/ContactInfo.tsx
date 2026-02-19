@@ -1,13 +1,80 @@
 "use client"
 import { MapPin, Phone, Mail, Clock, Linkedin, Facebook, Handshake, MessageCircle } from "lucide-react"
-import { siteConfig } from "@/config/siteConfig"
 import { useSearchParams } from "next/navigation"
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, Suspense, useMemo } from "react"
+import { usePublicSiteConfig } from "@/hooks/api/useSiteConfig"
+
+// Fallback contact info
+const fallbackContact = {
+  address: "Putalisadak, Kathmandu, Nepal",
+  phones: ["+977-9851328965", "+977-9851444045"] as string[],
+  email: "nexus@consultkes.com",
+  partnerEmail: "partnerwithkes@connectkes.com",
+  consultEmail: "nexus@consultkes.com"
+};
+
+const fallbackSocial = {
+  linkedin: "#",
+  facebook: "#"
+};
 
 function ContactFormContent() {
   const searchParams = useSearchParams()
   const [formType, setFormType] = useState<"partner" | "consult">("consult")
   const [submitted, setSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    organization: "",
+    subject: "",
+    message: ""
+  })
+  
+  // Fetch site config from API
+  const { data: configData = [] } = usePublicSiteConfig();
+  
+  // Parse config data into usable format
+  const contact = useMemo((): typeof fallbackContact => {
+    if (!configData || configData.length === 0) return fallbackContact;
+    
+    const configMap: Record<string, string> = {};
+    configData.forEach((item) => {
+      configMap[item.key] = item.value;
+    });
+    
+    let phones: string[] = fallbackContact.phones;
+    if (configMap['contact_phones']) {
+      try {
+        phones = JSON.parse(configMap['contact_phones']);
+      } catch {
+        phones = fallbackContact.phones;
+      }
+    }
+    
+    return {
+      address: configMap['contact_address'] || fallbackContact.address,
+      phones,
+      email: configMap['contact_email'] || fallbackContact.email,
+      partnerEmail: configMap['contact_partner_email'] || fallbackContact.partnerEmail,
+      consultEmail: configMap['contact_consult_email'] || fallbackContact.consultEmail
+    };
+  }, [configData]);
+  
+  const social = useMemo((): typeof fallbackSocial => {
+    if (!configData || configData.length === 0) return fallbackSocial;
+    
+    const configMap: Record<string, string> = {};
+    configData.forEach((item) => {
+      configMap[item.key] = item.value;
+    });
+    
+    return {
+      linkedin: configMap['social_linkedin'] || fallbackSocial.linkedin,
+      facebook: configMap['social_facebook'] || fallbackSocial.facebook
+    };
+  }, [configData]);
 
   useEffect(() => {
     const type = searchParams.get("type")
@@ -18,39 +85,65 @@ function ContactFormContent() {
     }
   }, [searchParams])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Form would submit to appropriate email based on formType
-    // partner → partner@consultkes.com
-    // consult → consult@consultkes.com
-    setSubmitted(true)
-    setTimeout(() => setSubmitted(false), 3000)
+    setIsSubmitting(true)
+    
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone || undefined,
+          subject: `${formType === "partner" ? "Partnership" : "Consultation"}: ${formData.subject}`,
+          message: formData.message,
+          type: formType === "partner" ? "partnership" : "consultation"
+        })
+      });
+      
+      if (response.ok) {
+        setSubmitted(true)
+        setFormData({ name: "", email: "", phone: "", organization: "", subject: "", message: "" })
+        setTimeout(() => setSubmitted(false), 5000)
+      }
+    } catch (error) {
+      console.error("Failed to submit form:", error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   }
 
   const contactDetails = [
     {
       icon: MapPin,
       title: "Our Office",
-      content: siteConfig.contact.address,
-      link: null
+      content: contact.address,
+      link: null as string | null
     },
     {
       icon: Phone,
       title: "Phone Numbers",
-      content: siteConfig.contact.phones.join(" | "),
-      link: `tel:${siteConfig.contact.phones[0]}`
+      content: contact.phones.join(" | "),
+      link: `tel:${contact.phones[0]}`
     },
     {
       icon: Mail,
       title: "Email Address",
-      content: siteConfig.contact.email,
-      link: `mailto:${siteConfig.contact.email}`
+      content: contact.email,
+      link: `mailto:${contact.email}`
     },
     {
       icon: Clock,
       title: "Working Hours",
       content: "Sunday - Friday: 9:00 AM - 6:00 PM",
-      link: null
+      link: null as string | null
     }
   ]
 
@@ -96,18 +189,18 @@ function ContactFormContent() {
               <h3 className="font-bold text-slate-900 mb-4">Direct Contact</h3>
               <div className="space-y-3">
                 <a 
-                  href={`mailto:${siteConfig.contact.partnerEmail}`}
+                  href={`mailto:${contact.partnerEmail}`}
                   className="flex items-center gap-3 text-slate-600 hover:text-yellow-600 transition-colors"
                 >
                   <Handshake className="w-5 h-5" />
-                  <span>Partnership Inquiries: <strong>{siteConfig.contact.partnerEmail}</strong></span>
+                  <span>Partnership Inquiries: <strong>{contact.partnerEmail}</strong></span>
                 </a>
                 <a 
-                  href={`mailto:${siteConfig.contact.consultEmail}`}
+                  href={`mailto:${contact.consultEmail}`}
                   className="flex items-center gap-3 text-slate-600 hover:text-yellow-600 transition-colors"
                 >
                   <MessageCircle className="w-5 h-5" />
-                  <span>Consultation Requests: <strong>{siteConfig.contact.consultEmail}</strong></span>
+                  <span>Consultation Requests: <strong>{contact.consultEmail}</strong></span>
                 </a>
               </div>
             </div>
@@ -117,7 +210,7 @@ function ContactFormContent() {
               <h3 className="font-bold text-slate-900 mb-4">Follow Us</h3>
               <div className="flex gap-4">
                 <a 
-                  href={siteConfig.social.linkedin} 
+                  href={social.linkedin} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="w-12 h-12 bg-slate-900 hover:bg-yellow-400 rounded-xl flex items-center justify-center transition-colors group"
@@ -125,7 +218,7 @@ function ContactFormContent() {
                   <Linkedin className="w-5 h-5 text-white group-hover:text-slate-900 transition-colors" />
                 </a>
                 <a 
-                  href={siteConfig.social.facebook} 
+                  href={social.facebook} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="w-12 h-12 bg-slate-900 hover:bg-yellow-400 rounded-xl flex items-center justify-center transition-colors group"
@@ -178,27 +271,22 @@ function ContactFormContent() {
             
             {submitted ? (
               <div className="text-center py-12">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Mail className="w-8 h-8 text-primary" />
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Mail className="w-8 h-8 text-green-600" />
                 </div>
                 <h4 className="text-xl font-bold text-slate-900 mb-2">Message Sent!</h4>
                 <p className="text-slate-600">We&apos;ll get back to you shortly.</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
-                <input type="hidden" name="formType" value={formType} />
-                <input 
-                  type="hidden" 
-                  name="toEmail" 
-                  value={formType === "partner" ? siteConfig.contact.partnerEmail : siteConfig.contact.consultEmail} 
-                />
-
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Your Name *</label>
                     <input
                       type="text"
                       name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
                       placeholder="John Doe"
                       className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-all"
                       required
@@ -209,6 +297,8 @@ function ContactFormContent() {
                     <input
                       type="email"
                       name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
                       placeholder="john@example.com"
                       className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-all"
                       required
@@ -224,6 +314,8 @@ function ContactFormContent() {
                     <input
                       type={formType === "partner" ? "text" : "tel"}
                       name={formType === "partner" ? "organization" : "phone"}
+                      value={formType === "partner" ? formData.organization : formData.phone}
+                      onChange={handleInputChange}
                       placeholder={formType === "partner" ? "Your Company/Organization" : "+977-98XXXXXXXX"}
                       className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-all"
                     />
@@ -234,6 +326,8 @@ function ContactFormContent() {
                     </label>
                     <select 
                       name="subject"
+                      value={formData.subject}
+                      onChange={handleInputChange}
                       className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition-all"
                       required
                     >
@@ -265,6 +359,8 @@ function ContactFormContent() {
                   <label className="block text-sm font-semibold text-slate-700 mb-2">Your Message *</label>
                   <textarea
                     name="message"
+                    value={formData.message}
+                    onChange={handleInputChange}
                     rows={5}
                     placeholder={
                       formType === "partner" 
@@ -278,9 +374,12 @@ function ContactFormContent() {
 
                 <button
                   type="submit"
-                  className="w-full bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold py-4 px-8 rounded-xl transition-all hover:shadow-lg hover:shadow-yellow-400/30 flex items-center justify-center gap-2"
+                  disabled={isSubmitting}
+                  className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:bg-yellow-300 text-slate-900 font-bold py-4 px-8 rounded-xl transition-all hover:shadow-lg hover:shadow-yellow-400/30 flex items-center justify-center gap-2"
                 >
-                  {formType === "partner" ? (
+                  {isSubmitting ? (
+                    <span>Sending...</span>
+                  ) : formType === "partner" ? (
                     <>
                       <Handshake className="w-5 h-5" />
                       Submit Partnership Inquiry

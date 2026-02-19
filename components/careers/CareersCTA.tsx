@@ -1,9 +1,76 @@
 "use client"
 
 import { Mail, Phone, MapPin, Send } from "lucide-react"
-import { siteConfig } from "@/config/siteConfig"
+import { usePublicSiteConfig } from "@/hooks/api/useSiteConfig"
+import { useMemo, useState } from "react"
+
+// Fallback contact info
+const fallbackContact = {
+  address: "Putalisadak, Kathmandu, Nepal",
+  phones: ["+977-9851328965", "+977-9851444045"] as string[],
+  email: "nexus@consultkes.com"
+};
 
 export default function CareersCTA() {
+  const { data: configData = [] } = usePublicSiteConfig();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  
+  const contact = useMemo((): typeof fallbackContact => {
+    if (!configData || configData.length === 0) return fallbackContact;
+    
+    const configMap: Record<string, string> = {};
+    configData.forEach((item) => {
+      configMap[item.key] = item.value;
+    });
+    
+    let phones: string[] = fallbackContact.phones;
+    if (configMap['contact_phones']) {
+      try {
+        phones = JSON.parse(configMap['contact_phones']);
+      } catch {
+        phones = fallbackContact.phones;
+      }
+    }
+    
+    return {
+      address: configMap['contact_address'] || fallbackContact.address,
+      phones,
+      email: configMap['contact_email'] || fallbackContact.email
+    };
+  }, [configData]);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    const formData = new FormData(e.currentTarget);
+    
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.get('name'),
+          email: formData.get('email'),
+          phone: formData.get('phone') || undefined,
+          subject: `Career Application: ${formData.get('position')}`,
+          message: formData.get('message') || 'Application submitted via careers form',
+          type: 'career'
+        })
+      });
+      
+      if (response.ok) {
+        setSubmitted(true);
+        setTimeout(() => setSubmitted(false), 5000);
+      }
+    } catch (error) {
+      console.error('Failed to submit application:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <section id="apply" className="py-20 bg-slate-900 relative overflow-hidden">
       {/* Background Pattern */}
@@ -37,8 +104,8 @@ export default function CareersCTA() {
                 </div>
                 <div>
                   <p className="text-slate-400 text-sm">Email your application to</p>
-                  <a href={`mailto:${siteConfig.contact.email}`} className="text-white font-semibold hover:text-yellow-500 transition-colors">
-                    {siteConfig.contact.email}
+                  <a href={`mailto:${contact.email}`} className="text-white font-semibold hover:text-yellow-500 transition-colors">
+                    {contact.email}
                   </a>
                 </div>
               </div>
@@ -49,8 +116,8 @@ export default function CareersCTA() {
                 </div>
                 <div>
                   <p className="text-slate-400 text-sm">Call us for inquiries</p>
-                  <a href={`tel:${siteConfig.contact.phones[0]}`} className="text-white font-semibold hover:text-yellow-500 transition-colors">
-                    {siteConfig.contact.phones[0]}
+                  <a href={`tel:${contact.phones[0]}`} className="text-white font-semibold hover:text-yellow-500 transition-colors">
+                    {contact.phones[0]}
                   </a>
                 </div>
               </div>
@@ -62,7 +129,7 @@ export default function CareersCTA() {
                 <div>
                   <p className="text-slate-400 text-sm">Visit our office</p>
                   <p className="text-white font-semibold">
-                    {siteConfig.contact.address}
+                    {contact.address}
                   </p>
                 </div>
               </div>
@@ -72,95 +139,118 @@ export default function CareersCTA() {
           {/* Right - Application Form */}
           <div className="bg-white rounded-2xl p-8 shadow-2xl">
             <h3 className="text-2xl font-bold text-slate-900 mb-6">Quick Application</h3>
-            <form className="space-y-5">
-              <div className="grid sm:grid-cols-2 gap-5">
+            
+            {submitted ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Mail className="w-8 h-8 text-green-600" />
+                </div>
+                <h4 className="text-xl font-bold text-slate-900 mb-2">Application Submitted!</h4>
+                <p className="text-slate-600">We&apos;ll review your application and get back to you shortly.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="grid sm:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Full Name *
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      placeholder="Your full name"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Email *
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      placeholder="your@email.com"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all"
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Full Name *
+                    Phone
                   </label>
                   <input
-                    type="text"
-                    placeholder="Your full name"
+                    type="tel"
+                    name="phone"
+                    placeholder="+977-XXXXXXXXXX"
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all"
-                    required
                   />
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Email *
+                    Position Applying For *
                   </label>
-                  <input
-                    type="email"
-                    placeholder="your@email.com"
+                  <select
+                    name="position"
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all"
                     required
+                  >
+                    <option value="">Select a position</option>
+                    <option value="hydropower-engineer">Hydropower Design Engineer</option>
+                    <option value="geotechnical-engineer">Engineering Geologist / Geotechnical Engineer</option>
+                    <option value="solar-engineer">Solar Energy Systems Engineer</option>
+                    <option value="graduate-trainee">Graduate Engineer Trainee</option>
+                    <option value="internship">Internship</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Cover Letter / Message
+                  </label>
+                  <textarea
+                    name="message"
+                    rows={4}
+                    placeholder="Tell us about yourself and why you want to join..."
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all resize-none"
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  placeholder="+977-XXXXXXXXXX"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Upload CV/Resume
+                  </label>
+                  <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-yellow-500 transition-colors cursor-pointer">
+                    <input type="file" className="hidden" id="cv-upload" accept=".pdf,.doc,.docx" />
+                    <label htmlFor="cv-upload" className="cursor-pointer">
+                      <div className="text-slate-400">
+                        <p className="font-medium">Click to upload or drag and drop</p>
+                        <p className="text-sm">PDF, DOC, DOCX (Max 5MB)</p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Position Applying For *
-                </label>
-                <select
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all"
-                  required
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-400 disabled:bg-yellow-300 text-slate-900 font-semibold py-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-yellow-500/25"
                 >
-                  <option value="">Select a position</option>
-                  <option value="hydropower-engineer">Hydropower Design Engineer</option>
-                  <option value="geotechnical-engineer">Engineering Geologist / Geotechnical Engineer</option>
-                  <option value="solar-engineer">Solar Energy Systems Engineer</option>
-                  <option value="graduate-trainee">Graduate Engineer Trainee</option>
-                  <option value="internship">Internship</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Cover Letter / Message
-                </label>
-                <textarea
-                  rows={4}
-                  placeholder="Tell us about yourself and why you want to join..."
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Upload CV/Resume
-                </label>
-                <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-yellow-500 transition-colors cursor-pointer">
-                  <input type="file" className="hidden" id="cv-upload" accept=".pdf,.doc,.docx" />
-                  <label htmlFor="cv-upload" className="cursor-pointer">
-                    <div className="text-slate-400">
-                      <p className="font-medium">Click to upload or drag and drop</p>
-                      <p className="text-sm">PDF, DOC, DOCX (Max 5MB)</p>
-                    </div>
-                  </label>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-semibold py-4 rounded-lg transition-all duration-300 shadow-lg hover:shadow-yellow-500/25"
-              >
-                <Send className="w-5 h-5" />
-                Submit Application
-              </button>
-            </form>
+                  {isSubmitting ? (
+                    <span>Submitting...</span>
+                  ) : (
+                    <>
+                      <Send className="w-5 h-5" />
+                      Submit Application
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </div>

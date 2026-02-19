@@ -1,5 +1,7 @@
-import { siteConfig } from "@/config/siteConfig"
-import { Award, Shield, Leaf, Lightbulb, Globe, Target, Eye } from "lucide-react"
+"use client"
+import { Award, Shield, Leaf, Lightbulb, Globe } from "lucide-react"
+import { usePublicSiteConfig } from "@/hooks/api/useSiteConfig"
+import { useMemo } from "react"
 
 const valueIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   Award,
@@ -9,9 +11,39 @@ const valueIcons: Record<string, React.ComponentType<{ className?: string }>> = 
   Globe,
 }
 
-export default function CoreValue(){
+// Fallback core values
+const fallbackCoreValues = [
+  { title: "Technical Excellence", icon: "Award" },
+  { title: "Integrity & Ethics", icon: "Shield" },
+  { title: "Sustainability", icon: "Leaf" },
+  { title: "Innovation", icon: "Lightbulb" },
+  { title: "Global Outlook", icon: "Globe" }
+];
 
+export default function CoreValue(){
+    const { data: configData = [] } = usePublicSiteConfig();
     
+    const coreValues = useMemo(() => {
+      if (!configData || configData.length === 0) {
+        return fallbackCoreValues;
+      }
+      
+      const configMap: Record<string, string> = {};
+      configData.forEach((item) => {
+        configMap[item.key] = item.value;
+      });
+      
+      if (configMap['company_core_values']) {
+        try {
+          return JSON.parse(configMap['company_core_values']) as typeof fallbackCoreValues;
+        } catch {
+          return fallbackCoreValues;
+        }
+      }
+      
+      return fallbackCoreValues;
+    }, [configData]);
+
     return(
         <section className="py-20 lg:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
@@ -23,7 +55,7 @@ export default function CoreValue(){
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-            {siteConfig.coreValues.map((value) => {
+            {coreValues.map((value) => {
               const Icon = valueIcons[value.icon] || Award
               return (
                 <div key={value.title} className="text-center p-6 bg-slate-50 rounded-2xl hover:bg-primary group transition-colors duration-300">

@@ -3,7 +3,6 @@
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useBlogBySlug, useRecentBlogs } from '@/hooks/api';
 import { Layout } from '@/components/layout/Layout';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
@@ -121,12 +120,10 @@ export default function BlogPostPage() {
                 transition={{ duration: 0.6, delay: 0.1 }}
                 className="relative h-64 md:h-96 rounded-2xl overflow-hidden mb-8 -mt-16 shadow-xl"
               >
-                <Image
-                  src={blog.featuredImage}
+                <img
+                  src={`http://localhost:8000${blog.featuredImage}`}
                   alt={blog.title}
-                  fill
                   className="object-cover"
-                  priority
                 />
               </motion.div>
             )}
@@ -186,10 +183,9 @@ export default function BlogPostPage() {
                   >
                     {relatedBlog.featuredImage ? (
                       <div className="relative h-40">
-                        <Image
-                          src={relatedBlog.featuredImage}
+                        <img
+                          src={`http://localhost:8000${relatedBlog.featuredImage}`}
                           alt={relatedBlog.title}
-                          fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       </div>

@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
-import Image from 'next/image';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useUploadFile } from '@/hooks/api/useUpload';
 
 interface ImageUploadProps {
@@ -27,6 +26,8 @@ export function ImageUpload({
   
   const uploadMutation = useUploadFile();
 
+  console.log("This is upkloadmutation")
+
   const aspectClasses = {
     square: 'aspect-square',
     video: 'aspect-video',
@@ -50,8 +51,9 @@ export function ImageUpload({
 
     try {
       const result = await uploadMutation.mutateAsync(file);
+      console.log("This is result",result)
       // Backend returns { success: true, file: { url: '...' } }
-      const uploadedUrl = result.file?.url || result.url || result.path || result.filename;
+      const uploadedUrl = result.file?.url
       onChange(uploadedUrl);
     } catch (err) {
       setError('Failed to upload image. Please try again.');
@@ -93,6 +95,11 @@ export function ImageUpload({
     }
   }, [onChange]);
 
+  useEffect(()=>{
+    console.log("This is value",value)
+  },[value])
+
+
   return (
     <div>
       <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -102,12 +109,12 @@ export function ImageUpload({
       {value ? (
         // Preview
         <div className={`relative ${aspectClasses[aspectRatio]} rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200`}>
-          <Image
-            src={value}
-            alt="Uploaded image"
-            fill
-            className="object-cover"
-          />
+         <img
+  src={`http://localhost:8000${value}`}
+  alt="Uploaded image"
+  className="object-cover"
+/>
+
           <div className="absolute inset-0 bg-black/0 hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
             <button
               type="button"
@@ -233,7 +240,7 @@ export function MultiImageUpload({
         {/* Existing images */}
         {values.map((url, index) => (
           <div key={index} className="relative aspect-video rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200 group">
-            <Image src={url} alt={`Image ${index + 1}`} fill className="object-cover" />
+            <img src={url} alt={`Image ${index + 1}`} className="object-cover" />
             <button
               type="button"
               onClick={() => handleRemove(index)}
