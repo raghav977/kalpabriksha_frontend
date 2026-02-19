@@ -35,7 +35,7 @@ export default function AdminBlogsPage() {
           {blog.featuredImage ? (
             <div className="relative w-14 h-10 rounded-lg overflow-hidden shrink-0 bg-neutral-100">
               <img
-                src={`http://localhost:8000${blog.featuredImage}`}
+                src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${blog.featuredImage}`}
                 alt={blog.title}
 
                 className="object-cover"

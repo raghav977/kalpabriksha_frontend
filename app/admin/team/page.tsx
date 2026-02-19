@@ -41,7 +41,7 @@ export default function TeamPage() {
         <div className="w-10 h-10 rounded-full overflow-hidden bg-neutral-200">
           {member.image ? (
             <img
-              src={`http://localhost:8000${member.image}`}
+              src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${member.image}`}
               alt={member.name}
               width={40}
               height={40}

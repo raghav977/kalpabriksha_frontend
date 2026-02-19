@@ -65,7 +65,7 @@ export function ProjectsPreviewSection() {
               >
                 {/* Background Image */}
                 <img
-                  src={`http://localhost:8000${project.featuredImage}`}
+                  src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${project.featuredImage}`}
                   alt={project.name}
                   className="object-cover group-hover:scale-110 transition-transform duration-500"
                 />

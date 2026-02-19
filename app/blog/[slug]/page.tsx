@@ -121,7 +121,7 @@ export default function BlogPostPage() {
                 className="relative h-64 md:h-96 rounded-2xl overflow-hidden mb-8 -mt-16 shadow-xl"
               >
                 <img
-                  src={`http://localhost:8000${blog.featuredImage}`}
+                  src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${blog.featuredImage}`}
                   alt={blog.title}
                   className="object-cover"
                 />
@@ -184,7 +184,7 @@ export default function BlogPostPage() {
                     {relatedBlog.featuredImage ? (
                       <div className="relative h-40">
                         <img
-                          src={`http://localhost:8000${relatedBlog.featuredImage}`}
+                          src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${relatedBlog.featuredImage}`}
                           alt={relatedBlog.title}
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
                         />

@@ -52,7 +52,7 @@ export function OurTeamSection() {
                 <div className="relative w-32 h-32 mx-auto mb-6 rounded-full overflow-hidden bg-slate-200">
                   {member.image ? (
                     <img
-                      src={`http://localhost:8000${member.image}`}
+                      src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${member.image}`}
                       alt={member.name}
                       className="object-cover"
                     />

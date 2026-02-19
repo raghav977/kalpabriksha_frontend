@@ -110,7 +110,7 @@ export function ImageUpload({
         // Preview
         <div className={`relative ${aspectClasses[aspectRatio]} rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200`}>
          <img
-  src={`http://localhost:8000${value}`}
+  src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${value}`}
   alt="Uploaded image"
   className="object-cover"
 />

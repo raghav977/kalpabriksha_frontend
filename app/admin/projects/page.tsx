@@ -35,7 +35,7 @@ export default function AdminProjectsPage() {
           {project.featuredImage ? (
             <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-neutral-100">
               <img
-                src={`http://localhost:8000${project.featuredImage}`}
+                src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${project.featuredImage}`}
                 alt={project.name}
                 className="object-cover"
               />
