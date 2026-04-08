@@ -18,11 +18,11 @@ export default function Hero() {
       icon: null,
     },
     {
-      badge: "GLOBAL VISION",
+      badge: "THIS IS NOT JUST A CONSULTING FIRM — THIS IS A GLOBAL ENGINEERING THINK-TANK.",
       title: "Nepal to the World,",
-      highlight: "Engineering Beyond Borders",
+      highlight: "Engineering Beyond ",
       subtitle:
-        "International expansion, global partnerships, and engineering excellence. Building bridges across Asia, Africa, and emerging markets.",
+        "Taking Nepal to the world and bringing world to the Nepal.",
       img: image1,
       icon: Globe,
     },

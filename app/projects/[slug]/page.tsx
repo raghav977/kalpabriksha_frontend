@@ -3,17 +3,23 @@
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useProjectBySlug } from '@/hooks/api';
 import { Layout } from '@/components/layout/Layout';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
 import { MapPin, Calendar, Building2, CheckCircle, ArrowLeft, ExternalLink, Zap } from 'lucide-react';
+import { getMediaUrl, normalizeStatusPhases, calculatePhaseProgress, calculateOverallPhaseProgress } from '@/utils/helper';
 
 export default function ProjectDetailPage() {
+
+  interface ProjectImageType {
+  url: string;
+}
   const params = useParams();
   const slug = params?.slug as string;
   
   const { data: project, isLoading, isError, error } = useProjectBySlug(slug);
+
+  console.log("THis is data",project);
 
   if (isLoading) {
     return (
@@ -38,7 +44,6 @@ export default function ProjectDetailPage() {
       </Layout>
     );
   }
-
   if (isError || !project) {
     return (
       <Layout>
@@ -63,11 +68,7 @@ export default function ProjectDetailPage() {
     );
   }
 
-  const imageUrl = project.featuredImage 
-    ? (project.featuredImage.startsWith('http') 
-        ? project.featuredImage 
-        : `${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')}${project.featuredImage}`)
-    : null;
+  const imageUrl = getMediaUrl(project.featuredImage) || null;
 
   // Parse scope if it's a string
   const scope = typeof project.scope === 'string' 
@@ -75,9 +76,15 @@ export default function ProjectDetailPage() {
     : (project.scope || []);
 
   // Parse images if it's a string
-  const images = typeof project.images === 'string'
-    ? JSON.parse(project.images || '[]')
-    : (project.images || []);
+const images = Array.isArray(project.ProjectImages)
+  ? project.ProjectImages 
+  : JSON.parse(project.ProjectImages || '[]');
+
+
+  const salientUrl = getMediaUrl(project.salientFeature);
+  const statusPhases = normalizeStatusPhases(project.statusPhases);
+  const overallPhaseProgress = calculateOverallPhaseProgress(statusPhases);
+
 
   return (
     <Layout>
@@ -185,21 +192,94 @@ export default function ProjectDetailPage() {
                   </div>
                 )}
 
+                {/* Project Study Phases */}
+                {statusPhases.length > 0 && (
+                  <div className="mt-12">
+                    <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                      <div>
+                        <h3 className="text-xl font-bold text-slate-900">Project Study Phase</h3>
+                        <p className="text-sm text-slate-500">Custom progress tracker shared by the client.</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs uppercase text-slate-500 tracking-wide">Overall Progress</p>
+                        <p className="text-2xl font-semibold text-slate-900">{overallPhaseProgress}%</p>
+                        <div className="w-40 h-2 bg-slate-100 rounded-full overflow-hidden mt-1">
+                          <div className="h-full bg-slate-900" style={{ width: `${overallPhaseProgress}%` }} />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-5">
+                      {statusPhases.map((phase, index) => {
+                        const items = Array.isArray(phase.items) ? phase.items : [];
+                        const phaseProgress = calculatePhaseProgress(items);
+                        return (
+                          <div key={phase.id || index} className="rounded-2xl border border-slate-200 overflow-hidden bg-white">
+                            <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4 bg-slate-50">
+                              <div>
+                                <p className="text-sm font-semibold text-slate-900">{phase.title || `Topic ${index + 1}`}</p>
+                                <p className="text-xs text-slate-500">Particulars &amp; status updates shared by client</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-xs uppercase text-slate-500 tracking-wide">Progress</p>
+                                <p className="text-xl font-semibold text-slate-900">{phaseProgress}%</p>
+                                <div className="w-32 h-2 bg-white rounded-full overflow-hidden mt-1">
+                                  <div className="h-full bg-yellow-400" style={{ width: `${phaseProgress}%` }} />
+                                </div>
+                              </div>
+                            </div>
+
+                            {items.length > 0 && (
+                              <div className="divide-y divide-slate-100">
+                                <div className="grid grid-cols-[2fr_1fr] text-xs uppercase tracking-wide text-slate-500 bg-slate-100 px-5 py-2">
+                                  <span>Particulars</span>
+                                  <span className="text-right">Status</span>
+                                </div>
+                                {items.map((item, itemIndex) => (
+                                  <div
+                                    key={item.id || itemIndex}
+                                    className="grid grid-cols-[2fr_1fr] gap-4 px-5 py-3 bg-white"
+                                  >
+                                    <div>
+                                      <p className="text-sm font-medium text-slate-900">{item.label || `Sub Topic ${itemIndex + 1}`}</p>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-sm font-medium text-slate-900">{item.statusText || '—'}</p>
+                                      <div className="flex items-center gap-2 justify-end mt-1">
+                                        <span className="text-xs font-semibold text-slate-500">{item.status ?? 0}%</span>
+                                        <div className="w-24 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                          <div className="h-full bg-slate-900" style={{ width: `${item.status ?? 0}%` }} />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Gallery */}
                 {images.length > 0 && (
                   <div className="mt-12">
                     <h3 className="text-xl font-bold text-slate-900 mb-6">Project Gallery</h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {images.map((image: string, index: number) => (
-                        <div key={index} className="relative aspect-square rounded-xl overflow-hidden">
-                          <Image
-                            src={image.startsWith('http') ? image : `${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')}${image}`}
-                            alt={`${project.name} - Image ${index + 1}`}
-                            fill
-                            className="object-cover hover:scale-105 transition-transform duration-300"
-                          />
-                        </div>
-                      ))}
+                      {images.map((image: ProjectImageType | string, index: number) => {
+                        const imagePath = typeof image === 'string' ? image : image.url;
+                        return (
+                          <div key={index} className="relative aspect-square rounded-xl overflow-hidden">
+                            <img
+                              src={getMediaUrl(imagePath, '/construction.jpg')}
+                              alt={`${project.name} - Image ${index + 1}`}
+                              className="object-cover hover:scale-105 transition-transform duration-300"
+                            />
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -255,6 +335,15 @@ export default function ProjectDetailPage() {
                         <dt className="text-sm text-slate-500">Completion Date</dt>
                         <dd className="font-medium text-slate-900">
                           {new Date(project.completionDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
+                        </dd>
+                      </div>
+                    )}
+                    {project.salientFeature && (
+                      <div>
+                        <dt className="text-sm text-slate-500">Salient feature</dt>
+                        <dd className="font-medium text-slate-900">
+                          <h1>{process.env.NEXT_IMAGE}</h1>
+                          <a href={salientUrl} target='_blank' className='text-[#0000EE]'>Click Here</a>
                         </dd>
                       </div>
                     )}

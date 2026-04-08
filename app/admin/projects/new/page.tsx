@@ -14,7 +14,13 @@ import {
   ListInput,
   FormActions,
   ImageUpload,
+  MultiImageUpload,
+  ProjectStatusBuilder,
+  createBlankStatusPhase,
 } from '@/components/admin';
+import { FileUpload } from '@/components/admin/FileUpload';
+import type { ProjectStatusPhase } from '@/types/project';
+import { sanitizeStatusPhases } from '@/utils/helper';
 
 export default function NewProjectPage() {
   const router = useRouter();
@@ -33,6 +39,9 @@ export default function NewProjectPage() {
     location: '',
     isActive: true,
     sortOrder: 0,
+    gallery: [] as string[],
+    salientFeature:'',
+    statusPhases: [createBlankStatusPhase()] as ProjectStatusPhase[],
   });
 
   const createMutation = useMutation({
@@ -46,7 +55,8 @@ export default function NewProjectPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const scope = formData.scope.filter(s => s.trim() !== '');
-    createMutation.mutate({ ...formData, scope });
+    const statusPhases = sanitizeStatusPhases(formData.statusPhases);
+    createMutation.mutate({ ...formData, scope, statusPhases });
   };
 
   const statusOptions = [
@@ -112,6 +122,22 @@ export default function NewProjectPage() {
             onChange={(url) => setFormData(prev => ({ ...prev, featuredImage: url }))}
             aspectRatio="video"
           />
+
+          <MultiImageUpload label='project images' values={formData.gallery} maxImages={6} onChange={(urls)=>setFormData(prev=>({
+            ...prev,gallery:urls
+          }))}/>
+
+
+          <FileUpload label='Salient feature' value={formData.salientFeature} onChange={(url)=>setFormData(prev=>({...prev,salientFeature:url}))}/>
+             
+          <ProjectStatusBuilder
+            value={formData.statusPhases}
+            onChange={(statusPhases) => setFormData((prev) => ({ ...prev, statusPhases }))}
+            label="Project Study Phase"
+            description="Create custom topics and sub-topics with completion percentages."
+          />
+
+          
 
           <div className="grid grid-cols-2 gap-4">
             <Select

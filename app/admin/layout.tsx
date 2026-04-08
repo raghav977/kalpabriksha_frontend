@@ -14,6 +14,9 @@ const navItems = [
   { href: '/admin/blogs', label: 'Blog Posts', icon: '◇' },
   { href: '/admin/team', label: 'Team', icon: '◆' },
   { href: '/admin/messages', label: 'Messages', icon: '✉' },
+  {href:'/admin/testimonial',label:"Testimonial",icon:'T'},
+  {href:"/admin/events",label:"Events",icon:'E'},
+  {href:'/admin/careers',label:"Careers",icon:'C'},
   { href: '/admin/settings', label: 'Settings', icon: '⚙' },
 ];
 

@@ -7,3 +7,4 @@ export * from './useSiteConfig';
 export * from './useContact';
 export * from './useAuth';
 export * from './useUpload';
+export * from './useEvents';

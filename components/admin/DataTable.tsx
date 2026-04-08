@@ -2,6 +2,8 @@
 
 import { ReactNode } from 'react';
 import Link from 'next/link';
+import Pagination from './Pagination';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface Column<T> {
   key: string;
@@ -18,7 +20,18 @@ interface DataTableProps<T extends { id: number }> {
   emptyAction?: { href: string; label: string };
   onDelete?: (id: number) => void;
   editHref?: (item: T) => string;
+  viewHref?: (item: T) => string;
+  viewResponseHref?: (item: T) => string;
+  onMarkAsRead?: (id: number) => void;
   isDeleting?: boolean;
+  pagination?: {
+    page: number;
+    pages: number;
+    total: number;
+    limit: number;
+    onPageChange: (page: number) => void;
+    onLimitChange?: (limit: number) => void;
+  } | null;
 }
 
 export function DataTable<T extends { id: number }>({
@@ -29,7 +42,11 @@ export function DataTable<T extends { id: number }>({
   emptyAction,
   onDelete,
   editHref,
+  viewHref,
+  viewResponseHref,
+  onMarkAsRead,
   isDeleting,
+  pagination,
 }: DataTableProps<T>) {
   if (isLoading) {
     return (
@@ -78,7 +95,7 @@ export function DataTable<T extends { id: number }>({
                 {col.header}
               </th>
             ))}
-            {(editHref || onDelete) && (
+            {(viewHref || editHref || onDelete || viewResponseHref) && (
               <th className="text-right px-6 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">
                 Actions
               </th>
@@ -93,9 +110,26 @@ export function DataTable<T extends { id: number }>({
                   {col.render ? col.render(item) : String((item as Record<string, unknown>)[col.key] ?? '')}
                 </td>
               ))}
-              {(editHref || onDelete) && (
+              {(editHref || onDelete || viewResponseHref) && (
                 <td className="px-6 py-4">
                   <div className="flex justify-end gap-1">
+                    {viewResponseHref && (
+                      <Link
+                        href={viewResponseHref(item)}
+                        className="px-3 py-1.5 text-sm text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors flex items-center gap-1"
+                      >
+                        <Eye className="w-4 h-4" />
+                        Response
+                      </Link>
+                    )}
+                    {viewHref && (
+                      <Link
+                        href={viewHref(item)}
+                        className="px-3 py-1.5 text-sm text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors"
+                      >
+                        View
+                      </Link>
+                    )}
                     {editHref && (
                       <Link
                         href={editHref(item)}
@@ -103,6 +137,15 @@ export function DataTable<T extends { id: number }>({
                       >
                         Edit
                       </Link>
+                    )}
+                    {onMarkAsRead && (
+                      <button
+                        onClick={() => onMarkAsRead(item.id)}
+                        className="px-3 py-1.5 text-sm text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors flex items-center gap-1"
+                        title="Mark as read"
+                      >
+                        <EyeOff className="w-4 h-4" />
+                      </button>
                     )}
                     {onDelete && (
                       <button
@@ -124,6 +167,18 @@ export function DataTable<T extends { id: number }>({
           ))}
         </tbody>
       </table>
+      {pagination && (
+        <div className="p-4">
+          <Pagination
+            page={pagination.page}
+            pages={pagination.pages}
+            total={pagination.total}
+            limit={pagination.limit}
+            onPageChange={pagination.onPageChange}
+            onLimitChange={pagination.onLimitChange}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -11,6 +11,7 @@ import {
   ErrorState,
   EmptyState,
   ConfirmModal,
+  Pagination,
 } from '@/components/admin';
 import { Mail, Phone, Eye, Trash2, MessageSquare, Users, Briefcase, HelpCircle, X } from 'lucide-react';
 
@@ -27,16 +28,19 @@ export default function AdminMessagesPage() {
   const queryClient = useQueryClient();
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [selectedType, setSelectedType] = useState<string>('');
+  const [page, setPage] = useState<number>(1);
+  const [limit, setLimit] = useState<number>(10);
   const [selectedMessage, setSelectedMessage] = useState<ContactSubmission | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   // Fetch submissions
   const { data, isLoading, error } = useQuery({
-    queryKey: ['contact', 'submissions', { status: selectedStatus, type: selectedType }],
-    queryFn: () => contactApi.getAll({ 
-      status: selectedStatus || undefined, 
+    queryKey: ['contact', 'submissions', { status: selectedStatus, type: selectedType, page, limit }],
+    queryFn: () => contactApi.getAll({
+      status: selectedStatus || undefined,
       type: selectedType || undefined,
-      limit: 100 
+      page,
+      limit,
     }),
   });
 
@@ -61,10 +65,10 @@ export default function AdminMessagesPage() {
   if (isLoading) return <PageLoading />;
   if (error) return <ErrorState message="Failed to load messages" />;
 
-  const submissions = data?.submissions || [];
+  const submissions: ContactSubmission[] = (data as any)?.submissions || [];
 
   // Count new messages
-  const newCount = submissions.filter(s => s.status === 'new').length;
+  const newCount = submissions.filter((s) => s.status === 'new').length;
 
   return (
     <div>
@@ -120,7 +124,7 @@ export default function AdminMessagesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
-              {submissions.map((sub) => {
+              {submissions.map((sub: ContactSubmission) => {
                 const typeInfo = typeLabels[sub.type] || typeLabels.general;
                 return (
                   <tr key={sub.id} className={`hover:bg-neutral-50 ${sub.status === 'new' ? 'bg-blue-50/30' : ''}`}>
@@ -148,6 +152,11 @@ export default function AdminMessagesPage() {
                         )}
                       </div>
                     </td>
+                    {/* <td className='px-4 py-3'>
+                      <a href={sub.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                        View CV
+                      </a>
+                    </td> */}
                     <td className="px-4 py-3">
                       <StatusBadge status={sub.status} variant={getStatusVariant(sub.status)} />
                     </td>
@@ -187,6 +196,23 @@ export default function AdminMessagesPage() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {data?.pagination && (
+        <div className="mt-4">
+          <Pagination
+            page={data.pagination.page}
+            pages={data.pagination.pages}
+            total={data.pagination.total}
+            limit={data.pagination.limit}
+            onPageChange={(p) => setPage(p)}
+            onLimitChange={(l) => {
+              setLimit(l);
+              setPage(1);
+            }}
+          />
         </div>
       )}
 
@@ -251,6 +277,16 @@ export default function AdminMessagesPage() {
                   <p className="whitespace-pre-wrap text-neutral-700">{selectedMessage.message}</p>
                 </div>
               </div>
+
+              {/* CV Link */}
+              {selectedMessage.url && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-medium text-neutral-500 mb-2">CV / Attachment</h4>
+                  <a href={`${process.env.NEXT_PUBLIC_IMAGE_URL}${selectedMessage.url}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    View CV / Attachment
+                  </a>
+                </div>
+              )}
 
               {/* Date */}
               <p className="text-sm text-neutral-400">

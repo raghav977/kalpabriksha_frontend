@@ -1,41 +1,48 @@
-export default function Comapny(){
-    return(
-        <section className="relative bg-white text-black py-24 lg:py-32 overflow-hidden">
-  {/* subtle pattern */}
-  <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_1px_1px,#000_1px,transparent_0)] bg-[length:40px_40px]" />
+"use client"
+import Image from "next/image"
+import { Wrench } from "lucide-react"
 
-  <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
-    <div className="max-w-3xl">
-      <span className="inline-block px-4 py-1.5 bg-white border text-black text-sm font-semibold rounded-full mb-6">
-        About Us
-      </span>
-
-      <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
-        Professional Engineering Consultancy from{" "}
-        <span className="text-primary">Nepal</span>
-      </h1>
-
-      <p className="text-black-300 text-lg lg:text-xl leading-relaxed">
-        Kalpabrikshya Engineering Solutions Pvt. Ltd. is a Nepal-based professional
-        engineering consultancy firm committed to delivering technically sound,
-        sustainable, and future-ready solutions.
-      </p>
-    </div>
-  </div>
-
-  {/* Bottom Wave Divider */}
-  <div className="absolute bottom-0 left-0 w-full leading-none">
-    <svg
-      viewBox="0 0 1440 320"
-      preserveAspectRatio="none"
-      className="w-full h-20 md:h-28 lg:h-32"
-    >
-      <path
-        className="fill-green-300"
-        d="M0,160L34.3,181.3C68.6,203,137,245,206,266.7C274.3,288,343,288,411,282.7C480,277,549,267,617,240C685.7,213,754,171,823,144C891.4,117,960,107,1029,90.7C1097.1,75,1166,53,1234,58.7C1302.9,64,1371,96,1406,112L1440,128L1440,320L0,320Z"
+export function Company() {
+  return (
+    <section className="relative w-full h-[50vh] min-h-[350px] overflow-hidden">
+      {/* Background */}
+      <Image
+        src="/construction.jpg"
+        alt="Our Services"
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover"
       />
-    </svg>
-  </div>
-</section>
-    )
+
+      {/* Overlays */}
+      <div className="absolute inset-0 bg-slate-900/70" />
+
+      {/* Content */}
+      <div className="relative z-10 flex flex-col justify-center items-center h-full px-6 text-center">
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-400 text-slate-900 text-sm font-bold rounded mb-6">
+          <Wrench className="w-4 h-4" />
+          ABOUT WE
+        </div>
+
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight mb-6">
+          OUR
+          <span className="text-yellow-400"> ETHICS</span>
+        </h1>
+
+        <p className="text-lg md:text-xl text-gray-300 max-w-3xl leading-relaxed">
+           Kalpabrikshya Engineering Solutions Pvt. Ltd. is a Nepal-based professional
+          engineering consultancy firm committed to delivering technically sound,
+          sustainable, and future-ready solutions.
+        </p>
+      </div>
+
+      {/* Bottom Wave */}
+      <div className="absolute bottom-0 left-0 right-0 z-10">
+        <svg viewBox="0 0 1440 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
+          <path d="M0 50L60 45.7C120 41.3 240 32.7 360 37.2C480 41.7 600 59.3 720 64.8C840 70.3 960 63.7 1080 54.2C1200 44.7 1320 32.3 1380 26.2L1440 20V100H1380C1320 100 1200 100 1080 100C960 100 840 100 720 100C600 100 480 100 360 100C240 100 120 100 60 100H0V50Z" fill="#f8fafc"/>
+        </svg>
+      </div>
+    </section>
+  )
 }

@@ -1,16 +1,21 @@
 "use client"
-import { MapPin, Users, Zap, CheckCircle, Clock, ArrowUpRight } from "lucide-react"
+import { useState } from 'react'
+import { MapPin, Users, Zap, CheckCircle, Clock } from "lucide-react"
 import { useProjects } from "@/hooks/api"
 import { Project } from "@/lib/api"
-import Image from "next/image"
 import Link from "next/link"
+import { getMediaUrl, normalizeStatusPhases, calculateOverallPhaseProgress } from "@/utils/helper"
+import { Pagination } from '@/components/admin'
 
 export function ProjectsList() {
-  const { data: projectsData, isLoading } = useProjects()
-  
+  const [page, setPage] = useState<number>(1)
+  const [limit, setLimit] = useState<number>(10)
+
+  const { data: projectsData, isLoading } = useProjects({ page, limit })
+
   // Extract projects array from response
   const projects = projectsData?.projects || []
-  console.log("Thfis is projects",projects)
+  console.log("Thfis is projects", projects)
 
   return (
     <section className="py-20 bg-slate-50">
@@ -48,7 +53,11 @@ export function ProjectsList() {
               </div>
             ))
           ) : (
-            projects.map((project: Project) => (
+            projects.map((project: Project) => {
+              const studyProgress = calculateOverallPhaseProgress(
+                normalizeStatusPhases(project.statusPhases)
+              );
+              return (
               <Link 
                 key={project.id}
                 href={`/projects/${project.slug}`}
@@ -57,11 +66,11 @@ export function ProjectsList() {
                 {/* Project Image */}
                 <div className="relative h-56 overflow-hidden">
                   <img
-                    src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${project.featuredImage}`}
+                    src={getMediaUrl(project.featuredImage, '/construction.jpg')}
                     alt={project.name}
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent" />
+                  <div className="absolute inset-0 bg-linear-to-t from-slate-900/90 via-slate-900/40 to-transparent" />
                   
                   {/* Status Badge */}
                   <div className="absolute top-4 left-4">
@@ -108,6 +117,18 @@ export function ProjectsList() {
                     </p>
                   )}
 
+                  {studyProgress > 0 && (
+                    <div className="mt-5">
+                      <div className="flex items-center justify-between text-xs font-semibold text-slate-500 mb-1">
+                        <span className="uppercase tracking-wide text-slate-500">Study Phase</span>
+                        <span className="text-slate-900">{studyProgress}%</span>
+                      </div>
+                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-yellow-400" style={{ width: `${studyProgress}%` }} />
+                      </div>
+                    </div>
+                  )}
+
                   {/* Scope */}
                   {project.scope && project.scope.length > 0 && (
                     <div className="mt-4">
@@ -117,7 +138,7 @@ export function ProjectsList() {
                       <ul className="space-y-2">
                         {project.scope.slice(0, 3).map((item, sIndex) => (
                           <li key={sIndex} className="flex items-start gap-2">
-                            <CheckCircle className="w-4 h-4 text-yellow-500 flex-shrink-0 mt-0.5" />
+                            <CheckCircle className="w-4 h-4 text-yellow-500 shrink-0 mt-0.5" />
                             <span className="text-slate-600 text-sm">{item}</span>
                           </li>
                         ))}
@@ -126,9 +147,26 @@ export function ProjectsList() {
                   )}
                 </div>
               </Link>
-            ))
+            )})
           )}
         </div>
+
+        {/* Pagination for public projects listing */}
+        {projectsData?.pagination && (
+          <div className="mt-8">
+            <Pagination
+              page={projectsData.pagination.page}
+              pages={projectsData.pagination.pages}
+              total={projectsData.pagination.total}
+              limit={projectsData.pagination.limit}
+              onPageChange={(p) => setPage(p)}
+              onLimitChange={(l) => {
+                setLimit(l)
+                setPage(1)
+              }}
+            />
+          </div>
+        )}
       </div>
     </section>
   )

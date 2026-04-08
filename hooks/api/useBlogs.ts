@@ -45,6 +45,18 @@ export function useRecentBlogs(limit = 3) {
 }
 
 /**
+ * Hook to fetch featured blogs for homepage
+ */
+export function useFeaturedBlogs(limit = 3) {
+  return useQuery({
+    queryKey: [...blogKeys.all, 'featured', limit] as const,
+    queryFn: () => blogsApi.getFeatured(limit),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+}
+
+/**
  * Hook to fetch a single blog by ID
  */
 export function useBlog(id: number) {
@@ -80,4 +92,23 @@ export function usePrefetchBlog() {
       queryFn: () => blogsApi.getBySlug(slug),
     });
   };
+}
+
+
+
+// hook to get published blogs only
+
+export function usePublishedBlog(params?: {
+  status?: string;
+  tag?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}) {
+  return useQuery({
+    queryKey: blogKeys.list(params || {}),
+    queryFn: () => blogsApi.getPublished(params),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
 }

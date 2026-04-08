@@ -17,6 +17,19 @@ export function useUploadFile() {
   });
 }
 
+// hook to upload cv file
+export function useUploadCv() {
+  console.log("useUploadCv called")
+  return useMutation({  
+    mutationFn: (file: File) => {
+      const formData = new FormData();
+      console.log("this is file for uploadcv",file)
+      formData.append('image', file); 
+      return uploadApi.uploadCv(formData);
+    },
+  });
+}
+
 /**
  * Hook to upload multiple files
  */

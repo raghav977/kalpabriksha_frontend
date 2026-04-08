@@ -26,8 +26,6 @@ export function ImageUpload({
   
   const uploadMutation = useUploadFile();
 
-  console.log("This is upkloadmutation")
-
   const aspectClasses = {
     square: 'aspect-square',
     video: 'aspect-video',
@@ -51,9 +49,8 @@ export function ImageUpload({
 
     try {
       const result = await uploadMutation.mutateAsync(file);
-      console.log("This is result",result)
       // Backend returns { success: true, file: { url: '...' } }
-      const uploadedUrl = result.file?.url
+      const uploadedUrl = result.file?.url || result.url || result.path;
       onChange(uploadedUrl);
     } catch (err) {
       setError('Failed to upload image. Please try again.');
@@ -95,11 +92,6 @@ export function ImageUpload({
     }
   }, [onChange]);
 
-  useEffect(()=>{
-    console.log("This is value",value)
-  },[value])
-
-
   return (
     <div>
       <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -109,11 +101,11 @@ export function ImageUpload({
       {value ? (
         // Preview
         <div className={`relative ${aspectClasses[aspectRatio]} rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200`}>
-         <img
-  src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${value}`}
-  alt="Uploaded image"
-  className="object-cover"
-/>
+          <img
+            src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${value}`}
+            alt="Uploaded image"
+            className="object-cover"
+          />
 
           <div className="absolute inset-0 bg-black/0 hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
             <button
@@ -179,8 +171,8 @@ export function ImageUpload({
 // Multiple image upload component
 interface MultiImageUploadProps {
   label: string;
-  values: string[];
-  onChange: (urls: string[]) => void;
+  values: any[];
+  onChange: (urls: any[]) => void;
   maxImages?: number;
   maxSize?: number;
 }
@@ -200,7 +192,7 @@ export function MultiImageUpload({
   const handleFiles = useCallback(async (files: FileList) => {
     setError(null);
 
-    const newUrls: string[] = [];
+    const newUrls: any[] = [];
     
     for (const file of Array.from(files)) {
       if (values.length + newUrls.length >= maxImages) {
@@ -213,9 +205,10 @@ export function MultiImageUpload({
 
       try {
         const result = await uploadMutation.mutateAsync(file);
-        // Backend returns { success: true, file: { url: '...' } }
-        const uploadedUrl = result.file?.url || result.url || result.path || result.filename;
-        newUrls.push(uploadedUrl);
+        // Backend returns { file: { url: '...' } } - store the full result
+        if (result) {
+          newUrls.push(result);
+        }
       } catch (err) {
         console.error('Upload error:', err);
       }
@@ -230,6 +223,14 @@ export function MultiImageUpload({
     onChange(values.filter((_, i) => i !== index));
   }, [values, onChange]);
 
+  // Helper to get URL from value (handles both string and object formats)
+  const getImageUrl = (value: any) => {
+    if (typeof value === 'string') {
+      return value;
+    }
+    return value?.file?.url || value?.url || value;
+  };
+
   return (
     <div>
       <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -238,9 +239,13 @@ export function MultiImageUpload({
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {/* Existing images */}
-        {values.map((url, index) => (
+        {values && values.length > 0 && values.map((imageValue, index) => (
           <div key={index} className="relative aspect-video rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200 group">
-            <img src={url} alt={`Image ${index + 1}`} className="object-cover" />
+            <img
+              src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${getImageUrl(imageValue)}`}
+              alt={`Image ${index + 1}`}
+              className="object-cover w-full h-full"
+            />
             <button
               type="button"
               onClick={() => handleRemove(index)}
@@ -252,7 +257,7 @@ export function MultiImageUpload({
         ))}
 
         {/* Add more button */}
-        {values.length < maxImages && (
+        {values && values.length < maxImages && (
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}

@@ -23,10 +23,11 @@ export function useProjects(params?: {
   active?: boolean;
   page?: number;
   limit?: number;
+  search?: string;
 }) {
   return useQuery({
     queryKey: projectKeys.list(params || {}),
-    queryFn: () => projectsApi.getAll(params),
+    queryFn: () => projectsApi.getAll(params as any),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });

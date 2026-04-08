@@ -5,6 +5,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { ArrowRight } from "lucide-react"
 import { useFeaturedProjects } from "@/hooks/api"
+import { normalizeStatusPhases, calculateOverallPhaseProgress, getMediaUrl } from "@/utils/helper"
 
 export function ProjectsPreviewSection() {
   const { data: featuredProjects = [], isLoading } = useFeaturedProjects(3)
@@ -57,7 +58,11 @@ export function ProjectsPreviewSection() {
               </div>
             ))
           ) : (
-            featuredProjects.map((project) => (
+            featuredProjects.map((project) => {
+              const studyProgress = calculateOverallPhaseProgress(
+                normalizeStatusPhases(project.statusPhases)
+              );
+              return (
               <Link
                 key={project.id}
                 href={`/projects/${project.slug}`}
@@ -65,16 +70,21 @@ export function ProjectsPreviewSection() {
               >
                 {/* Background Image */}
                 <img
-                  src={`${process.env.NEXT_PUBLIC_IMAGE_URL}${project.featuredImage}`}
+                  src={getMediaUrl(project.featuredImage, '/construction.jpg')}
                   alt={project.name}
                   className="object-cover group-hover:scale-110 transition-transform duration-500"
                 />
                 
                 {/* Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-black via-black/50 to-transparent" />
                 
                 {/* Content */}
                 <div className="absolute inset-0 p-6 flex flex-col justify-end">
+                  {studyProgress > 0 && (
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/15 backdrop-blur px-3 py-1 rounded-full text-xs font-semibold text-white">
+                      Study Phase {studyProgress}%
+                    </div>
+                  )}
                   {/* Status Badge */}
                   <span className="absolute top-4 left-4 px-3 py-1 bg-yellow-400 text-slate-900 text-xs font-semibold rounded-full capitalize">
                     {project.status}
@@ -97,7 +107,7 @@ export function ProjectsPreviewSection() {
                   </div>
                 </div>
               </Link>
-            ))
+            )})
           )}
         </div>
       </div>

@@ -17,7 +17,13 @@ import {
   LoadingSpinner,
   ErrorState,
   ImageUpload,
+  MultiImageUpload,
+  ProjectStatusBuilder,
+  createBlankStatusPhase,
 } from '@/components/admin';
+import { FileUpload } from '@/components/admin/FileUpload';
+import type { ProjectStatusPhase } from '@/types/project';
+import { normalizeStatusPhases, sanitizeStatusPhases } from '@/utils/helper';
 
 export default function EditProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -25,6 +31,8 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   const queryClient = useQueryClient();
   
   const { data: project, isLoading, error } = useProject(parseInt(id));
+
+  console.log("THis is project",project);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -39,10 +47,16 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     location: '',
     isActive: true,
     sortOrder: 0,
+    gallery: [] as string[],
+    salientFeature: '',
+    statusPhases: [createBlankStatusPhase()] as ProjectStatusPhase[],
+    
   });
 
   useEffect(() => {
     if (project) {
+      const normalizedPhases = normalizeStatusPhases(project.statusPhases);
+      
       setFormData({
         name: project.name || '',
         capacity: project.capacity || '',
@@ -56,6 +70,9 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
         location: project.location || '',
         isActive: project.isActive ?? true,
         sortOrder: project.sortOrder || 0,
+        gallery: project.ProjectImages || [],
+        salientFeature: project.salientFeature || '',
+        statusPhases: normalizedPhases.length ? normalizedPhases : [createBlankStatusPhase()],
       });
     }
   }, [project]);
@@ -72,7 +89,10 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const scope = formData.scope.filter(s => s.trim() !== '');
-    updateMutation.mutate({ ...formData, scope });
+    const statusPhases = sanitizeStatusPhases(formData.statusPhases);
+    console.log("This is status phases",statusPhases);
+    console.log("This is form data",formData);
+    updateMutation.mutate({ ...formData, scope, statusPhases });
   };
 
   const statusOptions = [
@@ -156,6 +176,37 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
             onChange={(url) => setFormData(prev => ({ ...prev, featuredImage: url }))}
             aspectRatio="video"
           />
+
+          <MultiImageUpload
+            label="Project Images"
+            values={formData.gallery}
+            maxImages={6}
+            onChange={(urls) =>
+              setFormData((prev) => ({
+                ...prev,
+                gallery: urls,
+              }))
+            }
+          />
+
+          <FileUpload
+            label="Salient Feature"
+            value={formData.salientFeature}
+            onChange={(url) =>
+              setFormData((prev) => ({
+                ...prev,
+                salientFeature: url,
+              }))
+            }
+          />
+
+          <ProjectStatusBuilder
+            value={formData.statusPhases}
+            onChange={(statusPhases) => setFormData((prev) => ({ ...prev, statusPhases }))}
+            label="Project Study Phase"
+            description="Track each topic and its sub-topics with completion percentages."
+          />
+
 
           <div className="grid grid-cols-2 gap-4">
             <Select

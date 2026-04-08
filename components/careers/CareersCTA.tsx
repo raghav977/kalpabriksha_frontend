@@ -2,7 +2,17 @@
 
 import { Mail, Phone, MapPin, Send } from "lucide-react"
 import { usePublicSiteConfig } from "@/hooks/api/useSiteConfig"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useSearchParams } from "next/navigation"
+import { FileUpload } from "../admin/FileUpload";
+import { CvUpload } from "../upload/CvUpload";
+import { usePositions } from "@/hooks/api/usePositions";
+
+
+interface positionData {
+  id: number;
+  title: string;
+}
 
 // Fallback contact info
 const fallbackContact = {
@@ -12,10 +22,44 @@ const fallbackContact = {
 };
 
 export default function CareersCTA() {
+  const searchParams = useSearchParams();
   const { data: configData = [] } = usePublicSiteConfig();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   
+  const [cvUrl, setCvUrl] = useState<string | null>(null);
+  const [selectedPosition, setSelectedPosition] = useState<number | undefined>();
+
+  const { data: positionList = [] } = usePositions();
+  console.log("Positions data:", positionList);
+
+  const positionData: positionData[] = (positionList || []) as positionData[];
+
+  // Auto-select position from URL query parameter
+  useEffect(() => {
+    const positionParam = searchParams.get('position');
+    if (positionParam && positionData.length > 0) {
+      // Find position by title
+      const foundPosition = positionData.find(p => p.title === positionParam);
+      if (foundPosition) {
+        setSelectedPosition(foundPosition.id);
+        
+        // Scroll to form after a small delay to ensure DOM is ready
+        setTimeout(() => {
+          const formElement = document.getElementById('career-form');
+          if (formElement) {
+            formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 100);
+      }
+    }
+  }, [searchParams, positionData]);
+
+  useEffect(()=>{
+    if(cvUrl){
+      console.log("CV URL updated:", cvUrl);
+    }
+  },[cvUrl])
   const contact = useMemo((): typeof fallbackContact => {
     if (!configData || configData.length === 0) return fallbackContact;
     
@@ -45,6 +89,11 @@ export default function CareersCTA() {
     setIsSubmitting(true);
     
     const formData = new FormData(e.currentTarget);
+    console.log("this is event", e.currentTarget)
+    
+    // Get position title from selected position ID
+    const selectedPos = positionData.find(p => p.id === selectedPosition);
+    const positionTitle = selectedPos?.title || formData.get('position') || 'Unknown Position';
     
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/contact`, {
@@ -54,9 +103,10 @@ export default function CareersCTA() {
           name: formData.get('name'),
           email: formData.get('email'),
           phone: formData.get('phone') || undefined,
-          subject: `Career Application: ${formData.get('position')}`,
+          subject: `Career Application: ${positionTitle}`,
           message: formData.get('message') || 'Application submitted via careers form',
-          type: 'career'
+          type: 'career',
+          cvUrl: cvUrl || undefined
         })
       });
       
@@ -137,7 +187,7 @@ export default function CareersCTA() {
           </div>
 
           {/* Right - Application Form */}
-          <div className="bg-white rounded-2xl p-8 shadow-2xl">
+          <div id="career-form" className="bg-white rounded-2xl p-8 shadow-2xl">
             <h3 className="text-2xl font-bold text-slate-900 mb-6">Quick Application</h3>
             
             {submitted ? (
@@ -195,16 +245,22 @@ export default function CareersCTA() {
                   </label>
                   <select
                     name="position"
+                    value={selectedPosition || ''}
+                    onChange={(e) => setSelectedPosition(e.target.value ? parseInt(e.target.value, 10) : undefined)}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none transition-all"
                     required
                   >
                     <option value="">Select a position</option>
-                    <option value="hydropower-engineer">Hydropower Design Engineer</option>
-                    <option value="geotechnical-engineer">Engineering Geologist / Geotechnical Engineer</option>
-                    <option value="solar-engineer">Solar Energy Systems Engineer</option>
-                    <option value="graduate-trainee">Graduate Engineer Trainee</option>
-                    <option value="internship">Internship</option>
-                    <option value="other">Other</option>
+                    {positionList && positionList.length > 0 ? (
+                      positionList.map((pos: any) => (
+                        <option key={pos.id} value={pos.id}>
+                          {pos.title}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                      </>
+                    )}
                   </select>
                 </div>
 
@@ -220,12 +276,12 @@ export default function CareersCTA() {
                   />
                 </div>
 
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Upload CV/Resume
+                    Upload CV/Resume*
                   </label>
                   <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-yellow-500 transition-colors cursor-pointer">
-                    <input type="file" className="hidden" id="cv-upload" accept=".pdf,.doc,.docx" />
+                    <input type="file" className="hidden" id="cv-upload" accept=".pdf,.doc,.docx" name="cv" required />
                     <label htmlFor="cv-upload" className="cursor-pointer">
                       <div className="text-slate-400">
                         <p className="font-medium">Click to upload or drag and drop</p>
@@ -233,7 +289,9 @@ export default function CareersCTA() {
                       </div>
                     </label>
                   </div>
-                </div>
+                </div> */}
+
+                <CvUpload label="Upload CV/Resume*" value={cvUrl || ''} onChange={(url) => setCvUrl(url)} />
 
                 <button
                   type="submit"

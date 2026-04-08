@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState, useMemo, useEffect } from 'react';
 
 import { useProjects } from '@/hooks/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -14,7 +15,29 @@ import {
 } from '@/components/admin';
 
 export default function AdminProjectsPage() {
-  const { data, isLoading, error, refetch } = useProjects();
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [featuredOnly, setFeaturedOnly] = useState(false);
+  const [activeOnly, setActiveOnly] = useState(false);
+
+  // debounce search input to avoid firing API on every keystroke
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const { data, isLoading, error, refetch } = useProjects({
+    page,
+    limit,
+    search: debouncedSearch || undefined,
+    status: statusFilter || undefined,
+    featured: featuredOnly,
+    active: activeOnly,
+  });
+
   const queryClient = useQueryClient();
 
   const deleteMutation = useMutation({
@@ -25,8 +48,9 @@ export default function AdminProjectsPage() {
   });
 
   const projects = data?.projects || [];
+  const pagination = data?.pagination || { total: 0, page: 1, limit, pages: 1 };
 
-  const columns = [
+  const columns = useMemo(() => [
     {
       key: 'name',
       header: 'Project',
@@ -75,7 +99,7 @@ export default function AdminProjectsPage() {
         )
       ),
     },
-  ];
+  ], []);
 
   if (error) {
     return (
@@ -105,6 +129,30 @@ export default function AdminProjectsPage() {
           </Link>
         }
       />
+
+      <div className="mb-4 flex gap-3 items-center">
+        <input
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          placeholder="Search projects..."
+          className="border rounded px-3 py-2 text-sm w-64"
+        />
+        <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="border rounded px-3 py-2 text-sm">
+          <option value="">All status</option>
+          <option value="ongoing">Ongoing</option>
+          <option value="completed">Completed</option>
+          <option value="upcoming">Upcoming</option>
+        </select>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={featuredOnly} onChange={(e) => { setFeaturedOnly(e.target.checked); setPage(1); }} />
+          Featured
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={activeOnly} onChange={(e) => { setActiveOnly(e.target.checked); setPage(1); }} />
+          Active
+        </label>
+      </div>
+
       <DataTable
         data={projects}
         columns={columns}
@@ -114,6 +162,14 @@ export default function AdminProjectsPage() {
         editHref={(project) => `/admin/projects/${project.id}`}
         onDelete={(id) => deleteMutation.mutate(id)}
         isDeleting={deleteMutation.isPending}
+        pagination={{
+          page: pagination.page,
+          pages: pagination.pages,
+          total: pagination.total,
+          limit: pagination.limit,
+          onPageChange: (p) => setPage(p),
+          onLimitChange: (l) => { setLimit(l); setPage(1); },
+        }}
       />
     </div>
   );

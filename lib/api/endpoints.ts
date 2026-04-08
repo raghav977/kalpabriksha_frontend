@@ -1,6 +1,23 @@
+import axios from 'axios';
 import api from './client';
+import type { ProjectStatusPhase } from '@/types/project';
 
 // Types
+
+export interface CareerVacancy {
+    id?: number;
+    title: string; // position title
+    category: string; // acts as a searchable category
+    location?: string;
+    type?: string; // full-time/part-time/contract
+    isRemote?: boolean;
+    isActive?: boolean;
+    salary?: string;
+    closingDate?: string;
+    description?: string;
+    responsibilities: string[];
+    requirements: string[];
+}
 export interface Service {
   id: number;
   slug: string;
@@ -27,7 +44,7 @@ export interface Project {
   status: 'ongoing' | 'completed' | 'upcoming';
   isFeatured: boolean;
   featuredImage?: string;
-  images: string[];
+  ProjectImages: string[];
   location?: string;
   startDate?: string;
   completionDate?: string;
@@ -35,6 +52,9 @@ export interface Project {
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
+  gallery:string[];
+  salientFeature:string;
+  statusPhases?: ProjectStatusPhase[] | string;
 }
 
 export interface Blog {
@@ -87,6 +107,7 @@ export interface ContactSubmission {
   teamMemberId?: number;
   teamMemberName?: string;
   createdAt: string;
+  url:string;
 }
 
 export interface SiteConfig {
@@ -100,10 +121,40 @@ export interface SiteConfig {
   updatedAt?: string;
 }
 
+
+export interface Testimonial{
+  id:number;
+  name:string;
+  image?:string;
+  company?:string;
+  isActive:boolean;
+  quote:string;
+
+
+}
+
+
+
+// project tracking kinda status
+
+export interface SubTask{
+  name:string;
+  progress:number;
+}
+
+export interface Task{
+  title:string;
+  tasks: SubTask[]
+
+}
+
 // Parsed config object returned by getAll
 export interface SiteConfigObject {
   [key: string]: any;
 }
+
+
+
 
 // ============ SERVICES API ============
 export const servicesApi = {
@@ -147,16 +198,26 @@ export const servicesApi = {
 // ============ PROJECTS API ============
 export const projectsApi = {
   // Get all projects (public)
-  getAll: async (params?: { status?: string; featured?: boolean; active?: boolean; page?: number; limit?: number }) => {
+  getAll: async (params?: { status?: string; featured?: boolean; active?: boolean; page?: number; limit?: number; search?: string }) => {
     const { data } = await api.get('/projects', { 
       params: { 
         ...params,
         featured: params?.featured ? 'true' : undefined,
-        active: params?.active ? 'true' : undefined
+        active: params?.active ? 'true' : undefined,
+        search: params?.search || undefined,
       } 
     });
-    console.log("THis is projects",data)
-    return { projects: data.projects as Project[], pagination: data.pagination };
+    // Normalize pagination shape: backend may return `totalPages` or `pages`.
+    const rawPagination = data.pagination || {};
+    const pagination = {
+      total: rawPagination.total ?? rawPagination.count ?? 0,
+      page: rawPagination.page ?? 1,
+      limit: rawPagination.limit ?? params?.limit ?? 10,
+      // prefer `pages`, fall back to `totalPages`, and compute if missing
+      pages: rawPagination.pages ?? rawPagination.totalPages ?? (rawPagination.total && rawPagination.limit ? Math.ceil(rawPagination.total / rawPagination.limit) : undefined),
+    } as any;
+
+    return { projects: data.projects as Project[], pagination };
   },
 
   // Get featured projects
@@ -213,6 +274,12 @@ export const blogsApi = {
   // Get recent blogs
   getRecent: async (limit = 3) => {
     const { data } = await api.get('/blogs/published', { params: { limit, sort: '-publishedAt' } });
+    return data.blogs as Blog[];
+  },
+
+  // Get featured blogs
+  getFeatured: async (limit = 3) => {
+    const { data } = await api.get('/blogs/published', { params: { limit, featured: true } });
     return data.blogs as Blog[];
   },
 
@@ -473,14 +540,29 @@ export const authApi = {
 export const uploadApi = {
   // Upload single file
   uploadFile: async (formData: FormData) => {
-    console.log("THis is formdata",formData)
-    const { data } = await api.post('/upload/single', formData, {
+
+      console.log("THis is formdata",formData)
+      const { data } = await api.post('/upload/single', formData, {
+        headers:{
+          'content-type': 'multipart/form-data'
+        }
+        
+      });
+      console.log("This is data",data);
+      return data;
+
+
+  },
+
+  uploadCv: async (formData: FormData) => {
+    console.log("THis is formdata for cv",formData)
+    const { data } = await api.post('/upload/upload-cv?type=cv', formData, {
       headers:{
         'content-type': 'multipart/form-data'
       }
-
+      
     });
-    console.log("This is data",data);
+    console.log("This is cv upload data",data);
     return data;
   },
 
@@ -500,3 +582,212 @@ export const uploadApi = {
     return data;
   },
 };
+
+
+
+
+export const testimonialApi = {
+  // Create testimonial (admin)
+  create: async (testimonialData: Partial<Testimonial>) => {
+    const { data } = await api.post('/testimonial/create', testimonialData);
+    return data.testimonial as Testimonial;
+  },
+
+  // Get all testimonials (admin/public)
+  getAll: async (params?: { page?: number; limit?: number; search?: string; active?: boolean }) => {
+    const { data } = await api.get('/testimonial/all', { params: { ...params, active: params?.active ? 'true' : undefined } });
+    // Normalize pagination if necessary
+    const rawPagination = data.pagination || {};
+    const pagination = {
+      total: rawPagination.total ?? rawPagination.count ?? 0,
+      page: rawPagination.page ?? 1,
+      limit: rawPagination.limit ?? params?.limit ?? 10,
+      pages: rawPagination.pages ?? rawPagination.totalPages ?? (rawPagination.total && rawPagination.limit ? Math.ceil(rawPagination.total / rawPagination.limit) : undefined),
+    } as any;
+
+    return { testimonials: data.testimonials as Testimonial[], pagination };
+  },
+  // Delete testimonial (admin)
+  delete: async (id: number) => {
+    const { data } = await api.delete(`/testimonial/${id}`);
+    return data;
+  },
+  getById: async (id: number) => {
+    const { data } = await api.get(`/testimonial/${id}`);
+    return data.testimonial as Testimonial;
+  },
+  update:async (id:number, testimonialData: Partial<Testimonial>)=>{
+    const { data } = await api.put(`/testimonial/${id}`, testimonialData);
+    return data.testimonial as Testimonial;
+  },
+  getActiveTestimonials: async (limit = 5,page=1) => {
+    const { data } = await api.get('/testimonial/active', { params: { limit, page } });
+    // Normalize pagination if necessary
+    const rawPagination = data.pagination || {};
+    const pagination = {
+      total: rawPagination.total ?? rawPagination.count ?? 0,
+      page: rawPagination.page ?? 1,
+      limit: rawPagination.limit ?? limit,
+      pages: rawPagination.pages ?? rawPagination.totalPages ?? (rawPagination.total && rawPagination.limit ? Math.ceil(rawPagination.total / rawPagination.limit) : undefined),
+    } as any;
+
+    return { testimonials: data.testimonials as Testimonial[], pagination };
+  },
+};
+
+
+
+
+
+export const careerPositionsApi = {
+  getAll:async(params?:{search?:string})=>{
+    const {data} = await api.get('/positions',{
+      params: {
+        search: params?.search || undefined
+      }
+    })
+
+    return data.positions as any[];  
+  },
+
+  create:async(position:string)=>{
+    const {data} = await api.post('/positions',{title:position});
+    return data.position;
+  },
+  update:async(id:number, position:string)=>{
+    const {data} = await api.put(`/positions/${id}`,{title:position});
+    return data.position;
+  },
+  delete:async(id:number)=>{
+    const {data} = await api.delete(`/positions/${id}`);
+    return data;
+  },
+  getById:async(id:number)=>{
+    const {data} = await api.get(`/positions/${id}`);
+    return data.position;
+  }
+
+
+
+}
+
+
+
+export const careersApi = {
+  create:async(careerData:Partial<CareerVacancy>)=>{
+    const {data} = await api.post('/careers',{...careerData});
+    return data.id as number;
+  },
+  getAll:async(params?:{page?:number; limit?:number; search?:string; active?:boolean})=>{
+    const {data} = await api.get('/careers',{params:{...params, active: params?.active ? 'true' : undefined}});
+    // Normalize pagination if necessary
+    console.log("This is data",data)
+    const rawPagination = data.pagination || {};
+    const pagination = {
+      total: rawPagination.total ?? rawPagination.count ?? 0,
+      page: rawPagination.page ?? 1,
+      limit: rawPagination.limit ?? params?.limit ?? 10,
+      pages: rawPagination.pages ?? rawPagination.totalPages ?? (rawPagination.total && rawPagination.limit ? Math.ceil(rawPagination.total / rawPagination.limit) : undefined),
+    } as any;
+
+    return { careers: data.submissions as CareerVacancy[], pagination };
+  },
+  getById:async(id:number)=>{
+    const {data} = await api.get(`/careers/${id}`);
+    return data.submission || data.career || data as CareerVacancy;
+  },
+  update:async(id:number, careerData:Partial<CareerVacancy>)=>{
+    const {data} = await api.put(`/careers/${id}`,{...careerData});
+    return data.career as CareerVacancy;
+  },
+  delete:async(id:number)=>{
+    const {data} = await api.delete(`/careers/${id}`);
+    return data;
+  },
+  getActiveCareers:async(page?:number, limit?:number)=>{
+    const {data} = await api.get('/careers/active',{params:{page, limit}});
+    // Normalize pagination if necessary
+    const rawPagination = data.pagination || {};
+    const pagination = {
+      total: rawPagination.total ?? rawPagination.count ?? 0,
+      page: rawPagination.page ?? 1,
+      limit: rawPagination.limit ?? limit ?? 10,
+      pages: rawPagination.pages ?? rawPagination.totalPages ?? (rawPagination.total && rawPagination.limit ? Math.ceil(rawPagination.total / rawPagination.limit) : undefined),
+    } as any;
+
+    return { careers: data.submissions as CareerVacancy[], pagination };
+  },
+  getPublicCareers:async(page?:number, limit?:number)=>{
+    const {data} = await api.get('/careers/public',{params:{page, limit}});
+    // Response: { data: [{id, positionId, salaryRange, closingDate, isRemote, employmentType, location, Position: {title}}, ...], pagination: {} }
+    const rawPagination = data.pagination || {};
+    const pagination = {
+      total: rawPagination.total ?? rawPagination.count ?? 0,
+      page: rawPagination.page ?? 1,
+      limit: rawPagination.limit ?? limit ?? 10,
+      pages: rawPagination.pages ?? rawPagination.totalPages ?? (rawPagination.total && rawPagination.limit ? Math.ceil(rawPagination.total / rawPagination.limit) : undefined),
+    } as any;
+
+    return { careers: data.data as any[], pagination };
+  },
+  getPublicCareerById:async(id:number)=>{
+    const {data} = await api.get(`/careers/public/${id}`);
+    // Response: { career: {id, positionId, salaryRange, closingDate, isRemote, employmentType, location, description, responsibilities, requirements, Position: {title}} }
+    return data.career as any;
+  }
+}
+
+// Events API
+import type { Event } from '@/types/event';
+
+export const eventsApi = {
+  create: async (eventData: Partial<Event> & { images?: string[], files?: any[] }) => {
+    const { data } = await api.post('/events', {
+      ...eventData,
+    });
+    return data.event as Event;
+  },
+  getAll: async (params?: { page?: number; limit?: number; search?: string; active?: boolean }) => {
+    const { data } = await api.get('/events', {
+      params: { ...params, active: params?.active ? 'true' : undefined }
+    });
+    const rawPagination = data.pagination || {};
+    const pagination = {
+      total: rawPagination.total ?? rawPagination.count ?? 0,
+      page: rawPagination.page ?? 1,
+      limit: rawPagination.limit ?? params?.limit ?? 10,
+      pages: rawPagination.pages ?? rawPagination.totalPages ?? (rawPagination.total && rawPagination.limit ? Math.ceil(rawPagination.total / rawPagination.limit) : undefined),
+    } as any;
+    return { events: data.events as Event[], pagination };
+  },
+  getById: async (id: number) => {
+    const { data } = await api.get(`/events/${id}`);
+    return data.event || data.submission || (data as Event);
+  },
+  update: async (id: number, eventData: Partial<Event> & { images?: string[], files?: any[] }) => {
+    const { data } = await api.put(`/events/${id}`, { ...eventData });
+    return data.event as Event;
+  },
+  delete: async (id: number) => {
+    const { data } = await api.delete(`/events/${id}`);
+    return data;
+  },
+  getPublicEvents: async (page?: number, limit?: number, search?: string) => {
+    const { data } = await api.get('/events/public', {
+      params: { page, limit, search }
+    });
+    const rawPagination = data.pagination || {};
+    const pagination = {
+      total: rawPagination.total ?? rawPagination.count ?? 0,
+      page: rawPagination.page ?? 1,
+      limit: rawPagination.limit ?? limit ?? 10,
+      pages: rawPagination.pages ?? rawPagination.totalPages ?? (rawPagination.total && rawPagination.limit ? Math.ceil(rawPagination.total / rawPagination.limit) : undefined),
+    } as any;
+    return { events: data.events as Event[], pagination };
+  },
+  getPublicEventById: async (id: number) => {
+    const { data } = await api.get(`/events/public/${id}`);
+    return data.event as Event;
+  },
+}
+
