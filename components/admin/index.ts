@@ -8,3 +8,4 @@ export { ImageUpload, MultiImageUpload } from './ImageUpload';
 export { FileUpload } from './FileUpload';
 export { ProjectStatusBuilder, createBlankStatusPhase } from './ProjectStatusBuilder';
 export { Pagination } from './Pagination';
+export { RichTextEditor } from './RichTextEditor';

@@ -17,6 +17,7 @@ import {
   LoadingSpinner,
   ErrorState,
   ImageUpload,
+  RichTextEditor,
 } from '@/components/admin';
 
 // Form type without readonly fields
@@ -188,15 +189,13 @@ export default function EditBlogPage({ params }: { params: Promise<{ id: string 
             required
           />
 
-          <Textarea
+          <RichTextEditor
             label="Content"
             value={formData.content}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, content: e.target.value }))
+            onChange={(content) =>
+              setFormData((prev) => ({ ...prev, content }))
             }
-            rows={10}
-            placeholder="Full blog post content (supports Markdown)..."
-            required
+            placeholder="Full blog post content..."
           />
 
           <div className="grid grid-cols-2 gap-4">

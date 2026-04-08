@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import DOMPurify from 'dompurify';
 import { useBlogBySlug, useRecentBlogs } from '@/hooks/api';
 import { Layout } from '@/components/layout/Layout';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
@@ -148,7 +149,10 @@ export default function BlogPostPage() {
 
                 {/* Article Content */}
                 <div className="prose prose-lg max-w-none prose-headings:text-slate-900 prose-p:text-slate-700 prose-a:text-gray-600 hover:prose-a:text-gray-700 prose-strong:text-slate-900">
-                  <div dangerouslySetInnerHTML={{ __html: blog.content }} />
+                  <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(blog.content, {
+                    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'a', 'img'],
+                    ALLOWED_ATTR: ['href', 'title', 'src', 'alt', 'target', 'rel', 'class', 'style'],
+                  }) }} />
                 </div>
 
                 {/* Tags */}

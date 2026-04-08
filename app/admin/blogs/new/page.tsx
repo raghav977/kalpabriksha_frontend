@@ -14,6 +14,7 @@ import {
   ListInput,
   FormActions,
   ImageUpload,
+  RichTextEditor,
 } from '@/components/admin';
 
 export default function NewBlogPage() {
@@ -111,13 +112,11 @@ export default function NewBlogPage() {
             required
           />
 
-          <Textarea
+          <RichTextEditor
             label="Content"
             value={formData.content}
-            onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-            rows={10}
-            placeholder="Full blog post content (supports Markdown)..."
-            required
+            onChange={(content) => setFormData(prev => ({ ...prev, content }))}
+            placeholder="Full blog post content..."
           />
 
           <div className="grid grid-cols-2 gap-4">
