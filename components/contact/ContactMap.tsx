@@ -20,7 +20,7 @@ export function ContactMap() {
         <div className="relative rounded-2xl overflow-hidden shadow-xl border border-slate-200">
           {/* Map Embed */}
           <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3532.399486003494!2d85.3234593!3d27.7049494!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39eb198222ac83e3%3A0x6210dde422c45189!2sNEO%20VALLEY%20EDUCATION!5e0!3m2!1sne!2snp!4v1771044633244!5m2!1sne!2snp"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3532.400149687045!2d85.3234469!3d27.7049289!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xafb40142f8b48d83%3A0x858dbc6847855db5!2sKalpabrikshya%20Engineering%20Solutions%20Pvt.%20Ltd.!5e0!3m2!1sen!2suk!4v1775681892135!5m2!1sen!2suk"
             width="100%"
             height="450"
             style={{ border: 0 }}
