@@ -83,7 +83,7 @@ export function DataTable<T extends { id: number }>({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
+    <div className="bg-white rounded-xl border border-neutral-200 overscroll-auto">
       <table className="w-full">
         <thead>
           <tr className="border-b border-neutral-200">
