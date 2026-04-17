@@ -189,10 +189,9 @@ function TeamMemberCard({ member }: { member: TeamMember }) {
         {/* Image */}
         <div className="relative h-64 bg-slate-200 overflow-hidden">
           {member.image ? (
-            <Image
+            <img
               src={member.image.startsWith('http') ? member.image : `${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')}${member.image}`}
               alt={member.name}
-              fill
               className="object-cover group-hover:scale-105 transition-transform duration-500"
             />
           ) : (
