@@ -1,7 +1,7 @@
 "use client"
 import Link from "next/link";
 import { useState } from "react";
-import logo from "@/public/logo.jpg"
+import logo from "@/public/remove-bg-logo.png"
 import Image from "next/image";
 import { Button } from "../ui/Button";
 import { Menu, X } from "lucide-react";
@@ -13,19 +13,20 @@ const navLinks = [
     {name:"Credential",href:"/credential"},
     { name: "Services", href: "/services" },
     { name: "Projects", href: "/projects" },
-    { name: "Events", href: "/events" },
     { name: "Research", href: "/research" },
+    { name: "Global Vision", href: "/vision" },
+    { name: "Events", href: "/events" },
     {name:"Blog",href:"/blog"},
     { name: "Careers", href: "/careers" },
     { name: "Connect", href: "/contact" },
-    { name: "Global Vision", href: "/vision" }
 ];
 
 export const Header: React.FC = () => {
-
     const [isOpen, setIsOpen] = useState(false)
 
     const toggleMenu = () => setIsOpen(!isOpen)
+
+
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

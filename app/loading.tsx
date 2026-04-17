@@ -14,7 +14,7 @@ export default function Loading() {
         {/* Logo */}
         <div className="relative w-28 h-28 animate-float">
           <Image
-            src="/logo.jpg"
+            src="/remove-bg-logo.png"
             alt="Kalpabrikshya Engineering Solutions"
             fill
             className="object-contain drop-shadow-xl"
