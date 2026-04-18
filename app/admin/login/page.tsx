@@ -23,6 +23,7 @@ export default function AdminLoginPage() {
 
     login(
       { email, password },
+      
       {
         onSuccess: () => {
           router.push('/admin');

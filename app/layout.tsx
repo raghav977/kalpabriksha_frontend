@@ -4,8 +4,6 @@ import "./globals.css";
 import { siteConfig } from "@/config/siteConfig";
 import { Providers } from "./providers";
 
-import SplashVideo from "@/components/animation/splashVIdeo";
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -17,25 +15,25 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: siteConfig.name,
+  title: {
+    default: siteConfig.name,
+    template: `%s | ${siteConfig.name}`,
+  },
   description: siteConfig.description,
   icons: {
-    icon: "/logo.jpg",
+    icon: "logo.jpg",
   },
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Providers>
-          {/* <SplashVideo/> */}
           {children}
         </Providers>
       </body>

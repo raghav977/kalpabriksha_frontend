@@ -1,7 +1,6 @@
 "use client"
 import Link from "next/link";
 import { useState } from "react";
-import logo from "@/public/remove-bg-logo.png"
 import Image from "next/image";
 import { Button } from "../ui/Button";
 import { Menu, X } from "lucide-react";
@@ -35,7 +34,7 @@ export const Header: React.FC = () => {
                     {/* Logo Section */}
                     <Link href="/" className="flex items-center gap-2">
                         <Image 
-                            src={logo} 
+                            src="/remove-bg-logo.png" 
                             alt="ConsultKES Logo" 
                             width={180} 
                             height={50} 
