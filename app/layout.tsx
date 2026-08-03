@@ -15,13 +15,34 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+    metadataBase: new URL("https://connectkes.com"),
+
   title: {
-    default: siteConfig.name,
-    template: `%s | ${siteConfig.name}`,
+     default: "Connect KES | Engineering Consultancy in Nepal",
+  template: `%s | Connect KES`,
   },
   description: siteConfig.description,
+
+  alternates:{
+    canonical: "/",
+  },
+  openGraph: {
+  type: "website",
+  url: "/",
+  siteName: "Connect KES",
+  title: "Connect KES | Engineering Consultancy in Nepal",
+  description: siteConfig.description,
+  images: [
+    {
+      url: "/og-image.jpg",
+      width: 1200,
+      height: 630,
+      alt: "Connect KES engineering consultancy in Nepal",
+    },
+  ],
+},
   icons: {
-    icon: "logo.jpg",
+    icon: "/logo.jpg",
   },
 };
 

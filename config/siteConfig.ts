@@ -1,9 +1,16 @@
 export const siteConfig = {
-  name: "Kalpabrikshya Engineering Solutions",
+ name: "Connect KES",
+
+  legalName: "Kalpabrikshya Engineering Solutions",
+
   shortName: "KES",
-  description: "Nepal-based professional engineering consultancy firm delivering technically sound, sustainable, and future-ready solutions in hydropower and solar energy.",
+
+  description:
+    "Connect KES is a Nepal-based professional engineering consultancy delivering technically sound, sustainable, and future-ready solutions in hydropower, solar energy, and infrastructure.",
+
   motto: "Leading with excellence, Rising with vision",
-  domain: "www.consultkes.com.np",
+
+  domain: "https://connectkes.com",
   
   contact: {
     address: "Putalisadak, Kathmandu, Nepal",
