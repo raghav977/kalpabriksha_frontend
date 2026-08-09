@@ -23,7 +23,7 @@ const navLinks = [
 const fallbackContact = {
   address: "Putalisadak, Kathmandu, Nepal",
   phones: ["+977-9851328965", "+977-9851444045"] as string[],
-  email: "nexus@consultkes.com"
+  email: "nexus@connectkes.com"
 };
 
 export const Footer: React.FC = () => {

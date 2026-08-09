@@ -15,9 +15,9 @@ export const siteConfig = {
   contact: {
     address: "Putalisadak, Kathmandu, Nepal",
     phones: ["+977-9851328965", "+977-9851444045"],
-    email: "nexus@consultkes.com",
+    email: "nexus@connectkes.com",
     partnerEmail: "partnerwithkes@connectkes.com",
-    consultEmail: "nexus@consultkes.com",
+    consultEmail: "nexus@connectkes.com",
   },
 
   social: {
