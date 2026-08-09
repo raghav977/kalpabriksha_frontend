@@ -92,6 +92,7 @@ export function CvUpload({
         accept={accept}
         onChange={handleInputChange}
         className="hidden"
+        required
       />
 
       {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
